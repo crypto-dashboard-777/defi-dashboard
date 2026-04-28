@@ -1,0 +1,38 @@
+name: Refresh DeFi Dashboard
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # every 30 minutes
+  workflow_dispatch:           # manual trigger via GitHub UI
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Refresh positions
+        env:
+          DEBANK_WALLET: ${{ vars.DEBANK_WALLET || '0xe16be042f9433779909a972669be3a2003956348' }}
+          SOL_WALLET: ${{ vars.SOL_WALLET || '6QcRFrTcHCZgKdtX83iusXVBvcz3vrwiKayREZtJBx5o' }}
+        run: python outputs/refresh_positions.py
+
+      - name: Commit updated dashboard
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html outputs/snapshots/ outputs/debank_positions_log.xlsx
+          git diff --staged --quiet || git commit -m "refresh: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Dashboard",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8080", "--directory", "outputs/dashboard_out"],
+      "port": 8080
+    },
+    {
+      "name": "menabunker",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8081", "--directory", "menabunker"],
+      "port": 8081
+    }
+  ]
+}
