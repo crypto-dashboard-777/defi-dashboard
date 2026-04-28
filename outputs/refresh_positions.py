@@ -792,8 +792,10 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   sortedP.forEach(function(p){
     var compTokens = (p.supplied||[]).map(function(x){return x.token}).join('+') + ' / ' +
                      ((p.borrowed||[]).length ? p.borrowed.map(function(x){return x.token}).join('+') : '\u2014');
-    var hrCell = p.healthRate!=null
-      ? '<span class="pill '+hrCls(p.healthRate)+' hr-pill">'+p.healthRate.toFixed(4)+'</span>'
+    var hrLabel = p.healthPct!=null ? p.healthPct+'% to liq'
+                : p.healthRate!=null ? p.healthRate.toFixed(4) : null;
+    var hrCell = hrLabel!=null
+      ? '<span class="pill '+hrCls(p.healthRate)+' hr-pill">'+hrLabel+'</span>'
       : '<span class="pill gray hr-pill">no debt</span>';
 
     rows.push(
@@ -1059,6 +1061,146 @@ def solana_wallet_tokens(min_usd: float = FILTER_USD) -> list[dict]:
     return out
 
 
+# ────────────────── Jupiter / Solana DeFi ──────────────────
+
+def _parse_usd(s: str) -> float:
+    return float(s.replace(",", "").replace("$", ""))
+
+
+def _parse_jupiter_text(text: str) -> tuple[list[dict], float]:
+    """Parse Jupiter portfolio page text → (positions, sol_net_worth)."""
+    import re
+
+    sol_net = 0.0
+    m = re.search(r'Net Worth\$([\d,]+\.?\d*)', text)
+    if m:
+        sol_net = _parse_usd(m.group(1))
+
+    positions = []
+
+    # Each Loopscale lending block:
+    # "LendingHealth 18%$52,676.82Supplied$201,328.94...Borrowed$148,652.13..."
+    lending_pat = re.compile(
+        r'LendingHealth\s+(\d+)%\$([\d,]+\.?\d*)'
+        r'Supplied\$([\d,]+\.?\d*)'
+        r'TokenBalance.*?Value(.*?)'
+        r'Borrowed\$([\d,]+\.?\d*)'
+        r'TokenBalance.*?Value(.*?)'
+        r'(?=LendingHealth|\Z|Kamino)',
+        re.DOTALL,
+    )
+    tok_pat = re.compile(
+        r'([A-Za-z][A-Za-z0-9]+)\s+([\d,]+(?:\.\d+)?)\s+\S+\$([\d.]+)[^$]*\$([\d,]+\.?\d*)'
+    )
+
+    for bm in lending_pat.finditer(text):
+        health_pct = int(bm.group(1))
+        net_usd    = _parse_usd(bm.group(2))
+        sup_usd    = _parse_usd(bm.group(3))
+        sup_block  = bm.group(4)
+        bor_usd    = _parse_usd(bm.group(5))
+        bor_block  = bm.group(6)
+
+        def parse_toks(block):
+            out = []
+            for tm in tok_pat.finditer(block):
+                sym, amt_s, _, usd_s = tm.groups()
+                out.append({"token": sym, "amount": float(amt_s.replace(",", "")),
+                            "usd": _parse_usd(usd_s)})
+            return out
+
+        sup_toks = parse_toks(sup_block) or [{"token": "?", "amount": 0.0, "usd": sup_usd}]
+        bor_toks = parse_toks(bor_block) or [{"token": "?", "amount": 0.0, "usd": bor_usd}]
+
+        positions.append({
+            "protocol": "Loopscale",
+            "chain": "Solana",
+            "chainId": "sol",
+            "type": "Lending",
+            "rabbyType": "Lending",
+            "healthRate": round(1.0 + health_pct / 100, 4),
+            "healthPct": health_pct,
+            "supplied": sup_toks,
+            "borrowed": bor_toks,
+            "rewards": [],
+            "description": f"Health {health_pct}%",
+            "_supSum": sup_usd,
+            "_borSum": bor_usd,
+            "_rewSum": 0.0,
+            "_net": net_usd,
+            "_poolId": "",
+            "_source": "jupiter",
+        })
+
+    # Kamino rewards
+    km = re.search(r'Kamino\$([\d,]+\.?\d*)Farming\$([\d,]+\.?\d*)Rewards', text)
+    if km:
+        rew_usd = _parse_usd(km.group(2))
+        if rew_usd >= 0.01:
+            rew_toks = []
+            after = text[km.end():]
+            for tm in re.finditer(r'\b([A-Z][A-Z0-9]{1,7})\s+Claimable\s*([\d,]+\.?\d*)\s+\S+\$([\d,]+\.?\d*)', after):
+                sym, amt_s, usd_s = tm.groups()
+                rew_toks.append({"token": sym, "amount": float(amt_s.replace(",", "")),
+                                 "usd": _parse_usd(usd_s)})
+            positions.append({
+                "protocol": "Kamino",
+                "chain": "Solana",
+                "chainId": "sol",
+                "type": "Yield",
+                "rabbyType": "Farming",
+                "healthRate": None,
+                "healthPct": None,
+                "supplied": [],
+                "borrowed": [],
+                "rewards": rew_toks or [{"token": "USDC", "amount": 0.0, "usd": rew_usd}],
+                "description": "Claimable rewards",
+                "_supSum": 0.0,
+                "_borSum": 0.0,
+                "_rewSum": rew_usd,
+                "_net": rew_usd,
+                "_poolId": "",
+                "_source": "jupiter",
+            })
+
+    return positions, sol_net
+
+
+def scrape_sol_defi_positions() -> tuple[list[dict], float]:
+    """Headless-browser scrape of Jupiter portfolio page → (positions, sol_net_worth)."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("[refresh] playwright not installed — skipping Solana DeFi positions", file=sys.stderr)
+        return [], 0.0
+
+    url = f"https://jup.ag/portfolio/{SOL_WALLET}"
+    print(f"[refresh] Opening {url} …")
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(headless=True)
+        ctx = browser.new_context(user_agent=(
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        ))
+        page = ctx.new_page()
+        page.goto(url, wait_until="networkidle", timeout=60_000)
+        # Wait for position data to appear
+        try:
+            page.wait_for_selector("text=Loopscale", timeout=30_000)
+        except Exception:
+            pass
+        try:
+            page.wait_for_selector("text=Kamino", timeout=10_000)
+        except Exception:
+            pass
+        text = page.inner_text("body")
+        browser.close()
+
+    positions, sol_net = _parse_jupiter_text(text)
+    print(f"[refresh] Jupiter: {len(positions)} Solana DeFi positions, sol_net=${sol_net:,.2f}")
+    return positions, sol_net
+
+
 # ────────────────────────── main ──────────────────────────
 
 def main():
@@ -1105,6 +1247,13 @@ def main():
     except Exception as e:
         print(f"[refresh] Solana fetch failed: {e}", file=sys.stderr)
 
+    sol_defi_positions, sol_net_worth = [], 0.0
+    try:
+        sol_defi_positions, sol_net_worth = scrape_sol_defi_positions()
+        positions = positions + sol_defi_positions
+    except Exception as e:
+        print(f"[refresh] Jupiter scrape failed: {e}", file=sys.stderr)
+
     sup = sum(p["_supSum"] for p in positions)
     bor = sum(p["_borSum"] for p in positions)
     hr_vals = [p["healthRate"] for p in positions if p.get("healthRate") is not None and p["healthRate"] > 0]
@@ -1113,13 +1262,21 @@ def main():
         lowest_hr=min(hr_vals) if hr_vals else None,
     )
 
-    source_label = "Rabby API (api.rabby.io/v1/user/complex_protocol_list)"
+    source_label = "Rabby API + Jupiter"
+
+    # Combine EVM reported total with Solana net worth for grand total
+    if reported_total is not None and sol_net_worth > 0:
+        combined_total = reported_total + sol_net_worth
+    elif sol_net_worth > 0:
+        combined_total = totals["net"] + sol_net_worth
+    else:
+        combined_total = reported_total
 
     xlsx_path = Path(args.xlsx)
-    new_wb = append_to_xlsx(xlsx_path, snapshot_time, source_label, positions, totals, reported_total)
+    new_wb = append_to_xlsx(xlsx_path, snapshot_time, source_label, positions, totals, combined_total)
     print(f"[refresh] {'Created' if new_wb else 'Appended to'} {xlsx_path}")
 
-    snap = snapshot_dict(positions, totals, reported_total, snapshot_time, source_label, wallet_toks=wallet_toks)
+    snap = snapshot_dict(positions, totals, combined_total, snapshot_time, source_label, wallet_toks=wallet_toks)
 
     snapshots_dir = Path(args.snapshots_dir)
     snap_path = save_timestamped_snapshot(snapshots_dir, snap)

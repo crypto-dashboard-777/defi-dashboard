@@ -4,7 +4,7 @@
     {
       "name": "Dashboard",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8080", "--directory", "outputs/dashboard_out"],
+      "runtimeArgs": ["-m", "http.server", "8080", "--directory", "docs"],
       "port": 8080
     },
     {
