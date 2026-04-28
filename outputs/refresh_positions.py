@@ -119,6 +119,10 @@ def wallet_tokens(tokens, position_token_ids: set, min_usd: float = FILTER_USD) 
         "paxos-standard", "binance-usd", "frax", "true-usd", "dai",
         "ethereum", "weth", "wbtc", "bitcoin",
     }
+    # Airdrop scam / illiquid junk tokens — blocked by contract address
+    BLOCKED_IDS = {
+        "0x66a3c2fa3e467aa586e90912f977e648589cabaf",  # AICC (AI Chain Coin) — airdrop scam, ~$0 liquidity
+    }
 
     out = []
     for t in tokens or []:
@@ -130,6 +134,8 @@ def wallet_tokens(tokens, position_token_ids: set, min_usd: float = FILTER_USD) 
         chain = t.get("chain") or "?"
         tid = (t.get("id") or "").lower()
         proto_id = (t.get("protocol_id") or "").lower()
+        if tid in BLOCKED_IDS:
+            continue
         # Drop position wrappers: token has a DeFi protocol_id (e.g., aave, pendle, morpho).
         # Plain assets (no protocol_id) and stablecoin issuers (tether, paypal) are kept.
         if proto_id and proto_id not in STABLE_ISSUER_PIDS:
