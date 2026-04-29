@@ -636,127 +636,168 @@ def compute_benchmarks(current: dict, snapshots: list[dict]) -> list[dict]:
 
 
 DASHBOARD_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 :root {
-  --bg:#08090e; --surface:#0f1219; --surface-2:#161c27; --surface-3:#1b2233;
-  --border:#1e2840; --border-2:#28354f;
-  --text:#dde2ee; --muted:#7c8ba0; --muted-2:#4d5e75;
-  --green:#34d399; --green-dim:rgba(52,211,153,.1);
-  --red:#f87171; --red-dim:rgba(248,113,113,.1);
-  --amber:#fbbf24; --amber-dim:rgba(251,191,36,.1);
-  --supply:#34d399; --borrow:#fb923c;
+  --bg:#05060c;
+  --surface:#0b0e18;
+  --surface-2:#111520;
+  --surface-3:#171d2e;
+  --border:#1a2035;
+  --border-2:#242e48;
+  --text:#e2e8f5;
+  --muted:#6b7a96;
+  --muted-2:#3d4d68;
+  --green:#2dd4a0;
+  --green-dim:rgba(45,212,160,.09);
+  --green-glow:rgba(45,212,160,.2);
+  --red:#f47070;
+  --red-dim:rgba(244,112,112,.09);
+  --amber:#f5a623;
+  --amber-dim:rgba(245,166,35,.1);
+  --indigo:#818cf8;
+  --indigo-dim:rgba(129,140,248,.1);
+  --supply:#2dd4a0;
+  --borrow:#fb923c;
+  --radius:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--bg);color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;
-  font-size:13px;line-height:1.5}
-body{padding:20px 24px 64px;max-width:1420px;margin:0 auto}
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{padding:24px 28px 80px;max-width:1440px;margin:0 auto}
 
+/* ── Header ── */
 header.page{display:flex;justify-content:space-between;align-items:flex-start;
-  gap:20px;margin-bottom:16px;flex-wrap:wrap}
-.hdr-left{display:flex;flex-direction:column;gap:3px}
-.hdr-title{display:flex;align-items:center;gap:8px}
-h1{font-size:16px;font-weight:600;letter-spacing:-.02em}
-.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;
-  box-shadow:0 0 0 0 rgba(52,211,153,.5);animation:pulse 2.5s ease-in-out infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}
-  70%{box-shadow:0 0 0 5px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
-.wallet{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10.5px;color:var(--muted-2)}
-.hdr-right{text-align:right;display:flex;flex-direction:column;gap:2px}
-.hdr-right .snap-time{font-size:11.5px;color:var(--muted)}
-.hdr-right .source{font-size:10px;color:var(--muted-2)}
-.hdr-right .hist{font-size:10px;color:var(--muted-2);font-style:italic}
-.live-line{font-size:11px;color:var(--muted);margin-top:2px}
+  gap:20px;margin-bottom:20px;flex-wrap:wrap;
+  background:linear-gradient(135deg,rgba(129,140,248,.04) 0%,transparent 60%);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 20px}
+.hdr-left{display:flex;flex-direction:column;gap:4px}
+.hdr-title{display:flex;align-items:center;gap:10px}
+h1{font-size:18px;font-weight:800;letter-spacing:-.04em;color:var(--text)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;
+  box-shadow:0 0 8px var(--green-glow);animation:pulse 2.5s ease-in-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--green-glow)}
+  70%{box-shadow:0 0 0 6px rgba(45,212,160,0)}100%{box-shadow:0 0 0 0 rgba(45,212,160,0)}}
+.wallet{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;
+  font-size:10px;color:var(--muted-2);letter-spacing:.02em}
+.hdr-right{text-align:right;display:flex;flex-direction:column;gap:3px}
+.hdr-right .snap-time{font-size:11px;color:var(--muted);font-weight:500}
+.hdr-right .source{font-size:9.5px;color:var(--muted-2)}
+.hdr-right .hist{font-size:9.5px;color:var(--muted-2);font-style:italic}
+.live-line{font-size:11px;color:var(--muted);margin-top:3px}
 
-.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:8px;margin-bottom:16px}
-.summary .cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
-.summary .label{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:4px}
-.summary .value{font-size:15px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.summary .value.small{font-size:13px}
-
-.pill{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600;white-space:nowrap;display:inline-block}
-.pill.green{color:var(--green);background:var(--green-dim)}
-.pill.amber{color:var(--amber);background:var(--amber-dim)}
-.pill.red{color:var(--red);background:var(--red-dim)}
+/* ── Pills ── */
+.pill{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;
+  white-space:nowrap;display:inline-block;letter-spacing:.02em}
+.pill.green{color:#0ecf8a;background:rgba(14,207,138,.12);border:1px solid rgba(14,207,138,.22)}
+.pill.amber{color:var(--amber);background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.22)}
+.pill.red{color:var(--red);background:rgba(244,112,112,.12);border:1px solid rgba(244,112,112,.22)}
 .pill.gray{color:var(--muted);background:var(--surface-2);border:1px solid var(--border-2)}
 
-.section-row{display:flex;justify-content:space-between;align-items:center;margin:18px 0 8px;flex-wrap:wrap;gap:8px}
-.section-title{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
-.legend{font-size:10px;color:var(--muted-2);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-.legend .swatch{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+/* ── Section labels ── */
+.section-row{display:flex;justify-content:space-between;align-items:center;
+  margin:20px 0 10px;flex-wrap:wrap;gap:8px}
+.section-title{font-size:10px;color:var(--muted-2);text-transform:uppercase;
+  letter-spacing:.1em;font-weight:700}
+.legend{font-size:9.5px;color:var(--muted-2);display:flex;gap:14px;
+  align-items:center;flex-wrap:wrap}
+.legend .swatch{display:inline-block;width:6px;height:6px;border-radius:2px;
+  margin-right:4px;vertical-align:-1px}
 
-.tbl{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);
-  border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.tbl thead th{background:var(--surface-2);color:var(--muted);font-size:9.5px;
-  text-transform:uppercase;letter-spacing:.06em;font-weight:600;text-align:right;
-  padding:9px 11px;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:1}
+/* ── Main table ── */
+.tbl{width:100%;border-collapse:separate;border-spacing:0;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  box-shadow:0 1px 3px rgba(0,0,0,.4),0 8px 32px rgba(0,0,0,.25)}
+.tbl thead th{
+  background:linear-gradient(180deg,var(--surface-3) 0%,var(--surface-2) 100%);
+  color:var(--muted-2);font-size:9px;text-transform:uppercase;
+  letter-spacing:.08em;font-weight:700;text-align:right;
+  padding:10px 13px;border-bottom:1px solid var(--border-2);
+  white-space:nowrap;position:sticky;top:0;z-index:2;
+  backdrop-filter:blur(8px)}
 .tbl thead th:first-child{text-align:left}
-.tbl tbody td{padding:6px 11px;border-bottom:1px solid var(--border);text-align:right;
-  vertical-align:middle;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl thead th.now-hdr{color:var(--text);font-weight:800;letter-spacing:.04em}
+.tbl tbody td{padding:5px 13px;border-bottom:1px solid var(--border);
+  text-align:right;vertical-align:middle;
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+  transition:background .08s}
 .tbl tbody td:first-child{text-align:left}
 .tbl tbody tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:rgba(255,255,255,.015)}
 
-.section-divider td{background:var(--bg);color:var(--muted-2);font-size:9.5px;
-  text-transform:uppercase;letter-spacing:.08em;font-weight:600;
-  padding:12px 11px 5px;border-bottom:1px solid var(--border)}
+/* ── Section divider rows ── */
+.section-divider td{background:var(--bg);color:var(--muted-2);font-size:8.5px;
+  text-transform:uppercase;letter-spacing:.1em;font-weight:700;
+  padding:14px 13px 4px;border-bottom:1px solid var(--border)}
 
-.pos-header td{background:var(--surface-2);padding:9px 11px;
-  border-top:1px solid var(--border-2);border-bottom:1px solid var(--border)}
-.pos-header td:first-child{border-left:3px solid transparent}
+/* ── Position header rows ── */
+.pos-header td{background:var(--surface-2);padding:8px 13px;
+  border-top:1px solid var(--border);border-bottom:1px solid rgba(255,255,255,.03)}
+.pos-header td:first-child{border-left:3px solid var(--border-2)}
 .pos-header.hr-green td:first-child{border-left-color:var(--green)}
 .pos-header.hr-amber td:first-child{border-left-color:var(--amber)}
 .pos-header.hr-red   td:first-child{border-left-color:var(--red)}
-.pos-header.hr-none  td:first-child{border-left-color:var(--border-2)}
+.pos-header.hr-none  td:first-child{border-left-color:var(--muted-2)}
 .pos-header .protocol{font-weight:600;font-size:13px}
-.pos-header .chain{display:inline-block;font-size:9px;padding:1px 6px;border-radius:999px;
-  background:var(--surface-3);color:var(--muted);border:1px solid var(--border-2);
-  margin-left:7px;vertical-align:2px;text-transform:uppercase;letter-spacing:.04em}
+.pos-header .chain{display:inline-block;font-size:8px;padding:1px 6px;border-radius:999px;
+  background:var(--surface-3);color:var(--muted-2);border:1px solid var(--border);
+  margin-left:7px;vertical-align:2px;text-transform:uppercase;letter-spacing:.05em}
 .pos-header .comp{font-size:10px;color:var(--muted);margin-left:8px;
   font-family:ui-monospace,Menlo,monospace}
 .pos-header .hr-pill{margin-left:8px;vertical-align:1px}
 
-.subrow td{padding:4px 11px}
-.subrow td:first-child{padding-left:26px;font-size:10px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.07em}
+/* ── Sub-rows (Collateral / Debt / Net / Balance) ── */
+.subrow td{padding:4px 13px}
+.subrow td:first-child{padding-left:28px;font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.09em}
 .subrow.collat td:first-child{color:var(--supply)}
 .subrow.debt   td:first-child{color:var(--borrow)}
-.subrow.net    td:first-child{color:var(--muted)}
-.subrow.bal    td:first-child{color:var(--muted)}
-.subrow.net td.now-cell,.subrow.bal td.now-cell{font-weight:700;font-size:13px}
-.subrow:last-of-type td{padding-bottom:8px}
+.subrow.net    td:first-child,.subrow.bal td:first-child{color:var(--muted)}
+.subrow.net td.now-cell,.subrow.bal td.now-cell{font-weight:800;font-size:14px}
+.subrow:last-of-type td{padding-bottom:10px}
 
-.now-cell{font-weight:600;color:var(--text)}
+/* ── Cell value classes ── */
+.now-cell{font-weight:700;color:var(--text)}
 .now-cell.neg{color:var(--red)}
-.cell-up{color:var(--green)}
-.cell-down{color:var(--red)}
+.cell-up{color:var(--green);font-weight:600}
+.cell-down{color:var(--red);font-weight:600}
 .cell-flat{color:var(--muted-2)}
-.cell-empty{color:var(--muted-2);font-size:11px}
-.cell-new{color:var(--amber);font-size:10px;font-weight:600;letter-spacing:.03em}
+.cell-empty{color:var(--muted-2);font-size:11px;opacity:.5}
+.cell-new{color:var(--amber);font-size:9.5px;font-weight:700;letter-spacing:.04em}
 
-.wallet-row td{padding:6px 11px}
+/* ── Wallet rows ── */
+.wallet-row td{padding:6px 13px}
 .wallet-row td:first-child{padding-left:14px}
-.wallet-row .tok-name{font-weight:600;font-size:12.5px}
-.wallet-row .tok-chain{display:inline-block;font-size:8.5px;padding:1px 5px;border-radius:999px;
+.wallet-row .tok-name{font-weight:700;font-size:12.5px}
+.wallet-row .tok-chain{display:inline-block;font-size:8px;padding:1px 5px;border-radius:999px;
   background:var(--surface-2);color:var(--muted-2);border:1px solid var(--border);
   margin-left:6px;vertical-align:1px;text-transform:uppercase;letter-spacing:.04em}
-.wallet-row .tok-qty{font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--muted-2);margin-left:6px}
+.wallet-row .tok-qty{font-family:ui-monospace,Menlo,monospace;font-size:10px;
+  color:var(--muted-2);margin-left:6px}
 
-.totals-row td{background:var(--surface-3);font-weight:700;font-size:13px;
-  border-top:1px solid var(--border-2);padding:9px 11px}
+/* ── Totals row ── */
+.totals-row td{
+  background:linear-gradient(90deg,rgba(129,140,248,.08),rgba(129,140,248,.03));
+  font-weight:800;font-size:14px;letter-spacing:-.01em;
+  border-top:2px solid var(--border-2);padding:10px 13px}
 .totals-row td:first-child{padding-left:14px}
 
-.closed-section{margin-top:26px}
-.cls-tbl{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);
-  border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.cls-tbl thead th{background:var(--surface-2);color:var(--muted);font-size:9.5px;
-  text-transform:uppercase;letter-spacing:.06em;font-weight:600;text-align:right;
-  padding:8px 11px;border-bottom:1px solid var(--border)}
+/* ── Closed positions table ── */
+.cls-tbl{width:100%;border-collapse:separate;border-spacing:0;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden}
+.cls-tbl thead th{background:var(--surface-2);color:var(--muted-2);font-size:9px;
+  text-transform:uppercase;letter-spacing:.08em;font-weight:700;text-align:right;
+  padding:9px 13px;border-bottom:1px solid var(--border)}
 .cls-tbl thead th:first-child{text-align:left}
-.cls-tbl tbody td{padding:6px 11px;border-bottom:1px solid var(--border);text-align:right;
-  color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.cls-tbl tbody td{padding:7px 13px;border-bottom:1px solid var(--border);
+  text-align:right;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
 .cls-tbl tbody td:first-child{text-align:left;color:var(--text)}
 .cls-tbl tbody tr:last-child td{border-bottom:none}
 
-.footnote{color:var(--muted-2);font-size:10px;margin-top:22px;text-align:center;line-height:1.8}
+.footnote{color:var(--muted-2);font-size:9.5px;margin-top:28px;text-align:center;line-height:2}
 """
 
 
@@ -769,95 +810,86 @@ def _lh_label(h: int) -> str:
 
 EXTRA_CSS = """
 /* ── Page nav ── */
-.page-nav{display:flex;gap:4px;margin-bottom:18px}
-.page-nav a{font-size:11px;font-weight:600;padding:5px 14px;border-radius:6px;
+.page-nav{display:flex;gap:4px;margin-bottom:20px}
+.page-nav a{font-size:10.5px;font-weight:700;padding:5px 16px;border-radius:8px;
   border:1px solid var(--border);color:var(--muted);text-decoration:none;
-  background:var(--surface);letter-spacing:.02em;transition:color .1s,border-color .1s}
-.page-nav a:hover{color:var(--text);border-color:var(--border-2)}
-.page-nav a.active{color:var(--text);background:var(--surface-2);border-color:var(--border-2)}
+  background:var(--surface);letter-spacing:.03em;transition:all .15s}
+.page-nav a:hover{color:var(--text);border-color:var(--border-2);background:var(--surface-2)}
+.page-nav a.active{color:var(--indigo);background:var(--indigo-dim);
+  border-color:rgba(129,140,248,.3)}
+
+/* ── Summary strip — Net hero + Collateral/Debt below ── */
+.summary{display:grid;grid-template-columns:1fr 1fr;
+  grid-template-rows:auto auto;gap:10px;margin-bottom:16px}
+.summary-net{grid-column:1/-1}
+.cell{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 18px;
+  transition:border-color .15s}
+.cell:hover{border-color:var(--border-2)}
+.cell-net{background:linear-gradient(135deg,rgba(129,140,248,.06) 0%,var(--surface) 80%);
+  border-color:rgba(129,140,248,.25);padding:18px 22px}
+.cell-collat{border-left:3px solid var(--supply)}
+.cell-debt{border-left:3px solid var(--borrow)}
+.cell .label{font-size:8px;color:var(--muted-2);text-transform:uppercase;
+  letter-spacing:.1em;font-weight:700;margin-bottom:5px}
+.cell-net .label{font-size:9px;color:var(--indigo);letter-spacing:.08em}
+.cell .value{font-size:20px;font-weight:900;letter-spacing:-.04em;
+  font-variant-numeric:tabular-nums;color:var(--text)}
+.cell-net .value{font-size:32px;letter-spacing:-.05em;color:var(--text)}
+.cell-collat .value{font-size:18px;color:var(--supply)}
+.cell-debt .value,.cell-val-debt{font-size:18px;color:var(--borrow)!important}
 
 /* ── Benchmark strip ── */
 .bench-strip{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
-.bench-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
-  padding:14px 17px 12px;min-width:120px;flex:1;transition:border-color .15s,background .15s;
-  display:flex;flex-direction:column;gap:2px}
-.bench-card:hover{border-color:var(--border-2);background:var(--surface-2)}
-.bench-card-day0{border-color:rgba(99,102,241,.35);background:linear-gradient(135deg,rgba(99,102,241,.07) 0%,var(--surface) 100%)}
-.bench-lbl{font-size:8.5px;color:var(--muted);text-transform:uppercase;
-  letter-spacing:.1em;font-weight:700;margin-bottom:6px}
-.bench-delta-up{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;
-  letter-spacing:-.04em;line-height:1;color:var(--green)}
-.bench-delta-dn{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;
-  letter-spacing:-.04em;line-height:1;color:var(--red)}
-.bench-delta-flat{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;
+.bench-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:15px 18px 13px;
+  min-width:130px;flex:1;
+  transition:border-color .15s,transform .1s;
+  display:flex;flex-direction:column;gap:0}
+.bench-card:hover{border-color:var(--border-2);transform:translateY(-1px)}
+.bench-card-day0{
+  background:linear-gradient(135deg,rgba(129,140,248,.07) 0%,var(--surface) 70%);
+  border-color:rgba(129,140,248,.3)}
+.bench-lbl{font-size:8px;color:var(--muted-2);text-transform:uppercase;
+  letter-spacing:.1em;font-weight:700;margin-bottom:8px}
+.bench-delta-up{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;
+  letter-spacing:-.04em;line-height:1;color:var(--green);
+  text-shadow:0 0 20px rgba(45,212,160,.3)}
+.bench-delta-dn{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;
+  letter-spacing:-.04em;line-height:1;color:var(--red);
+  text-shadow:0 0 20px rgba(244,112,112,.25)}
+.bench-delta-flat{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;
   letter-spacing:-.04em;line-height:1;color:var(--muted-2)}
-.bench-pct-up{font-size:12px;font-weight:700;color:var(--green);margin-top:2px;letter-spacing:-.01em}
-.bench-pct-dn{font-size:12px;font-weight:700;color:var(--red);margin-top:2px;letter-spacing:-.01em}
-.bench-pct-flat{font-size:12px;font-weight:700;color:var(--muted-2);margin-top:2px}
-.bench-base{font-size:10px;color:var(--muted-2);font-variant-numeric:tabular-nums;margin-top:4px}
-.bench-na{color:var(--muted-2);font-size:20px;font-weight:900;line-height:1}
+.bench-pct-up{font-size:12px;font-weight:700;color:var(--green);
+  margin-top:3px;letter-spacing:-.01em;opacity:.85}
+.bench-pct-dn{font-size:12px;font-weight:700;color:var(--red);
+  margin-top:3px;letter-spacing:-.01em;opacity:.85}
+.bench-pct-flat{font-size:12px;font-weight:600;color:var(--muted-2);margin-top:3px}
+.bench-base{font-size:9.5px;color:var(--muted-2);
+  font-variant-numeric:tabular-nums;margin-top:6px;border-top:1px solid var(--border);
+  padding-top:6px}
+.bench-na{color:var(--muted-2);font-size:18px;font-weight:900;line-height:1}
 
-/* ── Summary 3-card strip ── */
-.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-.cell{background:var(--surface);border:1px solid var(--border);border-radius:12px;
-  padding:14px 17px}
-.cell-collat{border-left:3px solid var(--supply)}
-.cell-debt{border-left:3px solid var(--borrow)}
-.cell-net{border-left:3px solid rgba(99,102,241,.6)}
-.cell .label{font-size:8.5px;color:var(--muted);text-transform:uppercase;
-  letter-spacing:.09em;font-weight:700;margin-bottom:6px}
-.cell .value{font-size:22px;font-weight:900;letter-spacing:-.035em;
-  font-variant-numeric:tabular-nums;color:var(--text)}
-.cell-val-debt{color:var(--borrow)!important}
-.bench-na{color:var(--muted-2);font-size:10.5px}
-
-/* ── Token group header ── */
+/* ── Token group headers ── */
 .tok-group-hdr td{
-  padding:14px 13px 6px;
-  border-top:2px solid var(--border-2);
+  padding:16px 14px 5px;
+  border-top:1px solid var(--border-2);
   background:transparent}
-.tok-group-hdr:first-child td{border-top:none;padding-top:6px}
-.tok-group-name{font-size:16px;font-weight:800;letter-spacing:-.03em;color:var(--text)}
-.tok-group-sub{font-size:10px;color:var(--muted-2);margin-top:1px}
+.tok-group-hdr:first-child td{border-top:none;padding-top:8px}
+.tok-group-name{
+  font-size:17px;font-weight:900;letter-spacing:-.04em;color:var(--text);
+  display:block;line-height:1.2}
+.tok-group-sub{font-size:10px;color:var(--muted-2);margin-top:2px;display:block}
 
-/* ── Position rows ── */
-.pos-header td{background:var(--surface-2);padding:8px 13px;
-  border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-.pos-header td:first-child{border-left:3px solid transparent;padding-left:22px}
-.pos-header.hr-green td:first-child{border-left-color:var(--green)}
-.pos-header.hr-amber td:first-child{border-left-color:var(--amber)}
-.pos-header.hr-red   td:first-child{border-left-color:var(--red)}
-.pos-header.hr-none  td:first-child{border-left-color:var(--border-2)}
+/* ── Position header ── */
+.pos-header td:first-child{padding-left:22px}
 .proto-name{font-weight:600;font-size:12px;color:var(--text)}
-.proto-chain{display:inline-block;font-size:8.5px;padding:1px 6px;border-radius:999px;
+.proto-chain{display:inline-block;font-size:8px;padding:1px 6px;border-radius:999px;
   background:var(--surface-3);color:var(--muted-2);border:1px solid var(--border);
   margin-left:6px;vertical-align:2px;text-transform:uppercase;letter-spacing:.05em}
-.proto-pair{font-size:9.5px;color:var(--muted-2);margin-left:8px;
+.proto-pair{font-size:9px;color:var(--muted-2);margin-left:8px;
   font-family:ui-monospace,Menlo,monospace}
-
-/* ── Health pill refinements ── */
-.pill{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;
-  white-space:nowrap;display:inline-block;letter-spacing:.02em}
-.pill.green{color:#059669;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25)}
-.pill.amber{color:#d97706;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25)}
-.pill.red  {color:#dc2626;background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.28)}
-.pill.gray {color:var(--muted);background:var(--surface-3);border:1px solid var(--border-2)}
 .hr-pill{margin-left:9px;vertical-align:1px}
-
-/* ── Sub-rows ── */
-.subrow td{padding:4px 13px}
-.subrow td:first-child{padding-left:32px;font-size:9.5px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
-.subrow.collat td:first-child{color:var(--supply)}
-.subrow.debt   td:first-child{color:var(--borrow)}
-.subrow.net    td:first-child,.subrow.bal td:first-child{color:var(--muted)}
-.subrow.net td.now-cell,.subrow.bal td.now-cell{font-weight:800;font-size:14px}
-.subrow:last-of-type td{padding-bottom:10px}
-
-/* ── Totals row ── */
-.totals-row td{background:linear-gradient(90deg,var(--surface-3),var(--surface-2));
-  font-weight:800;font-size:14px;border-top:2px solid var(--border-2);padding:10px 13px}
-.totals-row td:first-child{padding-left:14px;letter-spacing:-.01em}
 """
 
 
@@ -904,9 +936,9 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   // ── Summary cards ────────────────────────────────────────────────────────────
   var t=D.totals,wt=t.walletTokensTotal||0,eq=D.reportedTotal||(t.net+wt);
   document.getElementById('summary').innerHTML=
+    '<div class="cell cell-net summary-net"><div class="label">Net position</div><div class="value">'+fmtUsd(t.net)+'</div></div>'+
     '<div class="cell cell-collat"><div class="label">Collateral</div><div class="value">'+fmtUsd(t.sup)+'</div></div>'+
-    '<div class="cell cell-debt"><div class="label">Debt</div><div class="value cell-val-debt">'+fmtUsd(t.bor)+'</div></div>'+
-    '<div class="cell cell-net"><div class="label">Net</div><div class="value">'+fmtUsd(t.net)+'</div></div>';
+    '<div class="cell cell-debt"><div class="label">Debt</div><div class="value cell-val-debt">'+fmtUsd(t.bor)+'</div></div>';
 
   // ── Benchmark strip ──────────────────────────────────────────────────────────
   function benchCard(label,delta,pct,baseEquity,extraCls){
@@ -1096,13 +1128,13 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
 <div class="section-row">
   <div class="section-title">All holdings</div>
   <div class="legend">
-    <span><span class="swatch" style="background:#34d399"></span>In your favour</span>
-    <span><span class="swatch" style="background:#f87171"></span>Against you</span>
+    <span><span class="swatch" style="background:#2dd4a0"></span>In your favour</span>
+    <span><span class="swatch" style="background:#f47070"></span>Against you</span>
     <span>Threshold&nbsp;0.005% &middot; positions grouped by token</span>
   </div>
 </div>
 <table class="tbl">
-  <thead><tr><th>Token / Position</th><th>Now</th>{lh_hdrs}</tr></thead>
+  <thead><tr><th>Token / Position</th><th class="now-hdr">Now</th>{lh_hdrs}</tr></thead>
   <tbody id="tbody"></tbody>
 </table>
 <div id="closed"></div>
