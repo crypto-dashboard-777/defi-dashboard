@@ -777,19 +777,39 @@ EXTRA_CSS = """
 .page-nav a.active{color:var(--text);background:var(--surface-2);border-color:var(--border-2)}
 
 /* ── Benchmark strip ── */
-.bench-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-.bench-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  padding:11px 15px;min-width:110px;flex:1;transition:border-color .15s}
-.bench-card:hover{border-color:var(--border-2)}
-.bench-card-day0{border-color:var(--border-2);background:linear-gradient(135deg,var(--surface-2) 0%,var(--surface) 100%)}
-.bench-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;
-  letter-spacing:.08em;font-weight:700;margin-bottom:4px}
-.bench-base{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;
-  letter-spacing:-.02em;margin-bottom:3px;color:var(--text)}
-.bench-up{color:var(--green);font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
-.bench-dn{color:var(--red);font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.bench-strip{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.bench-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:14px 17px 12px;min-width:120px;flex:1;transition:border-color .15s,background .15s;
+  display:flex;flex-direction:column;gap:2px}
+.bench-card:hover{border-color:var(--border-2);background:var(--surface-2)}
+.bench-card-day0{border-color:rgba(99,102,241,.35);background:linear-gradient(135deg,rgba(99,102,241,.07) 0%,var(--surface) 100%)}
+.bench-lbl{font-size:8.5px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.1em;font-weight:700;margin-bottom:6px}
+.bench-delta-up{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;
+  letter-spacing:-.04em;line-height:1;color:var(--green)}
+.bench-delta-dn{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;
+  letter-spacing:-.04em;line-height:1;color:var(--red)}
+.bench-delta-flat{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;
+  letter-spacing:-.04em;line-height:1;color:var(--muted-2)}
+.bench-pct-up{font-size:12px;font-weight:700;color:var(--green);margin-top:2px;letter-spacing:-.01em}
+.bench-pct-dn{font-size:12px;font-weight:700;color:var(--red);margin-top:2px;letter-spacing:-.01em}
+.bench-pct-flat{font-size:12px;font-weight:700;color:var(--muted-2);margin-top:2px}
+.bench-base{font-size:10px;color:var(--muted-2);font-variant-numeric:tabular-nums;margin-top:4px}
+.bench-na{color:var(--muted-2);font-size:20px;font-weight:900;line-height:1}
+
+/* ── Summary 3-card strip ── */
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.cell{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:14px 17px}
+.cell-collat{border-left:3px solid var(--supply)}
+.cell-debt{border-left:3px solid var(--borrow)}
+.cell-net{border-left:3px solid rgba(99,102,241,.6)}
+.cell .label{font-size:8.5px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.09em;font-weight:700;margin-bottom:6px}
+.cell .value{font-size:22px;font-weight:900;letter-spacing:-.035em;
+  font-variant-numeric:tabular-nums;color:var(--text)}
+.cell-val-debt{color:var(--borrow)!important}
 .bench-na{color:var(--muted-2);font-size:10.5px}
-.bench-up small,.bench-dn small{font-size:9.5px;opacity:.8}
 
 /* ── Token group header ── */
 .tok-group-hdr td{
@@ -834,16 +854,6 @@ EXTRA_CSS = """
 .subrow.net td.now-cell,.subrow.bal td.now-cell{font-weight:800;font-size:14px}
 .subrow:last-of-type td{padding-bottom:10px}
 
-/* ── Summary cards ── */
-.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
-  gap:8px;margin-bottom:12px}
-.summary .cell{background:var(--surface);border:1px solid var(--border);
-  border-radius:10px;padding:11px 13px}
-.summary .label{font-size:9px;color:var(--muted);text-transform:uppercase;
-  letter-spacing:.07em;font-weight:700;margin-bottom:5px}
-.summary .value{font-size:16px;font-weight:800;letter-spacing:-.025em;
-  font-variant-numeric:tabular-nums;color:var(--text)}
-
 /* ── Totals row ── */
 .totals-row td{background:linear-gradient(90deg,var(--surface-3),var(--surface-2));
   font-weight:800;font-size:14px;border-top:2px solid var(--border-2);padding:10px 13px}
@@ -875,7 +885,7 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   // 0.01% threshold
   function histCell(cur,hist,kind){
     if(hist==null)return'<td class="cell-empty">—</td>';
-    var diff=cur-hist,thr=Math.max(10,Math.abs(cur)*0.0001),cls='cell-flat';
+    var diff=cur-hist,thr=Math.max(5,Math.abs(cur)*0.00005),cls='cell-flat';
     if(Math.abs(diff)>=thr)cls=kind==='liability'?(diff>0?'cell-down':'cell-up'):(diff>0?'cell-up':'cell-down');
     return'<td class="'+cls+'">'+fmtUsd(hist)+'</td>';
   }
@@ -893,31 +903,38 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
 
   // ── Summary cards ────────────────────────────────────────────────────────────
   var t=D.totals,wt=t.walletTokensTotal||0,eq=D.reportedTotal||(t.net+wt);
-  var hrPill='<span class="pill '+hrCls(t.lowest_hr)+'" style="font-size:12px;padding:3px 9px;">'+(t.lowest_hr!=null?t.lowest_hr.toFixed(4):'—')+'</span>';
-  document.getElementById('summary').innerHTML=[
-    ['Total equity',fmtUsd(eq)],['DeFi net',fmtUsd(t.net)],
-    ['Wallet',fmtUsd(wt)],['Collateral',fmtUsd(t.sup)],
-    ['Debt',fmtUsd(t.bor)],['Lowest HR',hrPill]
-  ].map(function(c){return'<div class="cell"><div class="label">'+c[0]+'</div><div class="value">'+c[1]+'</div></div>';}).join('');
+  document.getElementById('summary').innerHTML=
+    '<div class="cell cell-collat"><div class="label">Collateral</div><div class="value">'+fmtUsd(t.sup)+'</div></div>'+
+    '<div class="cell cell-debt"><div class="label">Debt</div><div class="value cell-val-debt">'+fmtUsd(t.bor)+'</div></div>'+
+    '<div class="cell cell-net"><div class="label">Net</div><div class="value">'+fmtUsd(t.net)+'</div></div>';
 
   // ── Benchmark strip ──────────────────────────────────────────────────────────
-  function deltaHtml(delta,pct){
-    if(delta==null)return'<span class="bench-na">no data yet</span>';
-    var cls=delta>=0?'bench-up':'bench-dn',arr=delta>=0?'▲':'▼';
-    return'<span class="'+cls+'">'+arr+' '+fmtUsd(Math.abs(delta))+' <small>('+fmtPct(pct)+')</small></span>';
+  function benchCard(label,delta,pct,baseEquity,extraCls){
+    var dcls,pcls,sign='';
+    if(delta==null){
+      return'<div class="bench-card'+(extraCls?' '+extraCls:'')+'">'+
+        '<div class="bench-lbl">'+label+'</div>'+
+        '<div class="bench-na">no data</div></div>';
+    }
+    if(Math.abs(pct)<0.005){dcls='bench-delta-flat';pcls='bench-pct-flat';sign='';}
+    else if(delta>=0){dcls='bench-delta-up';pcls='bench-pct-up';sign='+';}
+    else{dcls='bench-delta-dn';pcls='bench-pct-dn';}
+    var absDelta=fmtUsd(Math.abs(delta));
+    var signedDelta=(delta<0?'-':sign)+absDelta;
+    var pctStr=(delta>=0?'+':'')+pct.toFixed(2)+'%';
+    return'<div class="bench-card'+(extraCls?' '+extraCls:'')+'">'+
+      '<div class="bench-lbl">'+label+'</div>'+
+      '<div class="'+dcls+'">'+signedDelta+'</div>'+
+      '<div class="'+pcls+'">'+pctStr+'</div>'+
+      (baseEquity!=null?'<div class="bench-base">from '+fmtUsd(baseEquity)+'</div>':'')+
+      '</div>';
   }
   var bh='';
   if(D.day0){
-    bh+='<div class="bench-card bench-card-day0">'+
-      '<div class="bench-lbl">Since Day 0</div>'+
-      '<div class="bench-base">'+fmtUsd(D.day0.equity)+'</div>'+
-      '<div>'+deltaHtml(D.day0.delta,D.day0.pct)+'</div></div>';
+    bh+=benchCard('Since Day 0',D.day0.delta,D.day0.pct,D.day0.equity,'bench-card-day0');
   }
   (D.benchmarks||[]).forEach(function(b){
-    bh+='<div class="bench-card">'+
-      '<div class="bench-lbl">vs '+b.label+'</div>'+
-      (b.equity!=null?'<div class="bench-base">'+fmtUsd(b.equity)+'</div>':'<div class="bench-base bench-na">—</div>')+
-      '<div>'+deltaHtml(b.delta,b.pct)+'</div></div>';
+    bh+=benchCard('vs '+b.label,b.delta,b.pct,b.equity);
   });
   document.getElementById('benchmarks').innerHTML=bh;
 
@@ -1081,7 +1098,7 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   <div class="legend">
     <span><span class="swatch" style="background:#34d399"></span>In your favour</span>
     <span><span class="swatch" style="background:#f87171"></span>Against you</span>
-    <span>Threshold&nbsp;0.01% &middot; positions grouped by token</span>
+    <span>Threshold&nbsp;0.005% &middot; positions grouped by token</span>
   </div>
 </div>
 <table class="tbl">
