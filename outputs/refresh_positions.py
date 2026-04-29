@@ -33,6 +33,8 @@ RABBY_BASE = "https://api.rabby.io/v1"
 LOOKBACKS_H = [12, 24, 36, 48, 168, 336]   # 168 = 7d, 336 = 14d
 
 BENCHMARK_DAYS = [
+    (7,   "1w"),
+    (14,  "2w"),
     (30,  "1mo"),
     (90,  "3mo"),
     (365, "1y"),
@@ -758,55 +760,119 @@ h1{font-size:16px;font-weight:600;letter-spacing:-.02em}
 """
 
 
-def _lh_label(h: int) -> str:
-    if h == 168:  return "7d ago"
-    if h == 336:  return "14d ago"
-    return f"{h}h ago"
-
-
 
 def _lh_label(h: int) -> str:
-    if h == 168: return "7d ago"
-    if h == 336: return "14d ago"
-    return f"{h}h ago"
+    if h == 168: return "7d"
+    if h == 336: return "14d"
+    return f"{h}h"
+
+
+EXTRA_CSS = """
+/* ── Page nav ── */
+.page-nav{display:flex;gap:4px;margin-bottom:18px}
+.page-nav a{font-size:11px;font-weight:600;padding:5px 14px;border-radius:6px;
+  border:1px solid var(--border);color:var(--muted);text-decoration:none;
+  background:var(--surface);letter-spacing:.02em;transition:color .1s,border-color .1s}
+.page-nav a:hover{color:var(--text);border-color:var(--border-2)}
+.page-nav a.active{color:var(--text);background:var(--surface-2);border-color:var(--border-2)}
+
+/* ── Benchmark strip ── */
+.bench-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.bench-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:11px 15px;min-width:110px;flex:1;transition:border-color .15s}
+.bench-card:hover{border-color:var(--border-2)}
+.bench-card-day0{border-color:var(--border-2);background:linear-gradient(135deg,var(--surface-2) 0%,var(--surface) 100%)}
+.bench-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.08em;font-weight:700;margin-bottom:4px}
+.bench-base{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;margin-bottom:3px;color:var(--text)}
+.bench-up{color:var(--green);font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.bench-dn{color:var(--red);font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.bench-na{color:var(--muted-2);font-size:10.5px}
+.bench-up small,.bench-dn small{font-size:9.5px;opacity:.8}
+
+/* ── Token group header ── */
+.tok-group-hdr td{
+  padding:14px 13px 6px;
+  border-top:2px solid var(--border-2);
+  background:transparent}
+.tok-group-hdr:first-child td{border-top:none;padding-top:6px}
+.tok-group-name{font-size:16px;font-weight:800;letter-spacing:-.03em;color:var(--text)}
+.tok-group-sub{font-size:10px;color:var(--muted-2);margin-top:1px}
+
+/* ── Position rows ── */
+.pos-header td{background:var(--surface-2);padding:8px 13px;
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.pos-header td:first-child{border-left:3px solid transparent;padding-left:22px}
+.pos-header.hr-green td:first-child{border-left-color:var(--green)}
+.pos-header.hr-amber td:first-child{border-left-color:var(--amber)}
+.pos-header.hr-red   td:first-child{border-left-color:var(--red)}
+.pos-header.hr-none  td:first-child{border-left-color:var(--border-2)}
+.proto-name{font-weight:600;font-size:12px;color:var(--text)}
+.proto-chain{display:inline-block;font-size:8.5px;padding:1px 6px;border-radius:999px;
+  background:var(--surface-3);color:var(--muted-2);border:1px solid var(--border);
+  margin-left:6px;vertical-align:2px;text-transform:uppercase;letter-spacing:.05em}
+.proto-pair{font-size:9.5px;color:var(--muted-2);margin-left:8px;
+  font-family:ui-monospace,Menlo,monospace}
+
+/* ── Health pill refinements ── */
+.pill{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;
+  white-space:nowrap;display:inline-block;letter-spacing:.02em}
+.pill.green{color:#059669;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25)}
+.pill.amber{color:#d97706;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25)}
+.pill.red  {color:#dc2626;background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.28)}
+.pill.gray {color:var(--muted);background:var(--surface-3);border:1px solid var(--border-2)}
+.hr-pill{margin-left:9px;vertical-align:1px}
+
+/* ── Sub-rows ── */
+.subrow td{padding:4px 13px}
+.subrow td:first-child{padding-left:32px;font-size:9.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.subrow.collat td:first-child{color:var(--supply)}
+.subrow.debt   td:first-child{color:var(--borrow)}
+.subrow.net    td:first-child,.subrow.bal td:first-child{color:var(--muted)}
+.subrow.net td.now-cell,.subrow.bal td.now-cell{font-weight:800;font-size:14px}
+.subrow:last-of-type td{padding-bottom:10px}
+
+/* ── Summary cards ── */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+  gap:8px;margin-bottom:12px}
+.summary .cell{background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:11px 13px}
+.summary .label{font-size:9px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.07em;font-weight:700;margin-bottom:5px}
+.summary .value{font-size:16px;font-weight:800;letter-spacing:-.025em;
+  font-variant-numeric:tabular-nums;color:var(--text)}
+
+/* ── Totals row ── */
+.totals-row td{background:linear-gradient(90deg,var(--surface-3),var(--surface-2));
+  font-weight:800;font-size:14px;border-top:2px solid var(--border-2);padding:10px 13px}
+.totals-row td:first-child{padding-left:14px;letter-spacing:-.01em}
+"""
 
 
 def render_dashboard_html(enriched: dict, generated_at: str) -> str:
-    """Positions page: benchmark strip + per-position lookback table."""
-    payload_json = json.dumps(enriched, separators=(",", ":"), default=str)
+    """Token-first positions page with benchmark strip and per-position lookback table."""
+    import json as _json
+    payload_json = _json.dumps(enriched, separators=(",", ":"), default=str)
     payload_safe = payload_json.replace("</", "<\\/")
-    lookback_headers = "".join(f"<th>{_lh_label(h)}</th>" for h in LOOKBACKS_H)
-
-    extra_css = """
-.bench-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.bench-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  padding:10px 14px;min-width:120px;flex:1}
-.bench-card-day0{border-color:var(--border-2);background:var(--surface-2)}
-.bench-lbl{font-size:9.5px;color:var(--muted);text-transform:uppercase;
-  letter-spacing:.06em;font-weight:600;margin-bottom:3px}
-.bench-base{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:2px}
-.bench-up{color:var(--green);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
-.bench-dn{color:var(--red);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
-.bench-na{color:var(--muted-2);font-size:11px}
-.bench-up small,.bench-dn small{font-size:10px;opacity:.85}
-.page-nav{display:flex;gap:4px;margin-bottom:16px}
-.page-nav a{font-size:11px;font-weight:600;padding:5px 14px;border-radius:6px;
-  border:1px solid var(--border);color:var(--muted);text-decoration:none;background:var(--surface)}
-.page-nav a:hover{color:var(--text);border-color:var(--border-2)}
-.page-nav a.active{color:var(--text);background:var(--surface-2);border-color:var(--border-2)}
-"""
+    # Column headers — compact labels
+    lh_hdrs = "".join(f'<th>{_lh_label(h)}</th>' for h in LOOKBACKS_H)
 
     js = """
 (function(){
   var D=JSON.parse(document.getElementById('payload').textContent);
   var L=D.lookbacksHours||[12,24,36,48,168,336];
-  function fmtUsd(n){
+
+  function fmtUsd(n,dec){
     if(n==null)return'—';
     return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',
-      minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
+      minimumFractionDigits:dec||0,maximumFractionDigits:dec||0}).format(n);
   }
   function fmtPct(p){if(p==null)return'—';return(p>=0?'+':'')+p.toFixed(2)+'%';}
   function hrCls(h){return h==null?'gray':(h<1.05?'red':(h<1.15?'amber':'green'));}
+
+  // 0.01% threshold
   function histCell(cur,hist,kind){
     if(hist==null)return'<td class="cell-empty">—</td>';
     var diff=cur-hist,thr=Math.max(10,Math.abs(cur)*0.0001),cls='cell-flat';
@@ -817,6 +883,7 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   function emptyCell(){return'<td class="cell-empty">—</td>';}
   function hrHdrCls(hr){return hr==null?'hr-none':(hr<1.05?'hr-red':(hr<1.15?'hr-amber':'hr-green'));}
 
+  // ── Header ──────────────────────────────────────────────────────────────────
   document.getElementById('wallet').textContent=D.wallet;
   document.getElementById('captured').textContent='Snapshot '+D.capturedAt+' UTC';
   document.getElementById('source').textContent=D.source;
@@ -824,14 +891,16 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
     ?'Day 0 — lookback colours appear from the next snapshot'
     :D.snapshotCount+' snapshots since '+D.earliestSnapshotAt+' UTC';
 
-  var t=D.totals,wt=t.walletTokensTotal||0,totalEquity=D.reportedTotal||(t.net+wt);
-  var hrPill='<span class="pill '+hrCls(t.lowest_hr)+'" style="font-size:12px;padding:3px 8px;">'+(t.lowest_hr!=null?t.lowest_hr.toFixed(4):'—')+'</span>';
+  // ── Summary cards ────────────────────────────────────────────────────────────
+  var t=D.totals,wt=t.walletTokensTotal||0,eq=D.reportedTotal||(t.net+wt);
+  var hrPill='<span class="pill '+hrCls(t.lowest_hr)+'" style="font-size:12px;padding:3px 9px;">'+(t.lowest_hr!=null?t.lowest_hr.toFixed(4):'—')+'</span>';
   document.getElementById('summary').innerHTML=[
-    ['Total equity',fmtUsd(totalEquity)],['DeFi net',fmtUsd(t.net)],
+    ['Total equity',fmtUsd(eq)],['DeFi net',fmtUsd(t.net)],
     ['Wallet',fmtUsd(wt)],['Collateral',fmtUsd(t.sup)],
     ['Debt',fmtUsd(t.bor)],['Lowest HR',hrPill]
   ].map(function(c){return'<div class="cell"><div class="label">'+c[0]+'</div><div class="value">'+c[1]+'</div></div>';}).join('');
 
+  // ── Benchmark strip ──────────────────────────────────────────────────────────
   function deltaHtml(delta,pct){
     if(delta==null)return'<span class="bench-na">no data yet</span>';
     var cls=delta>=0?'bench-up':'bench-dn',arr=delta>=0?'▲':'▼';
@@ -839,42 +908,96 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   }
   var bh='';
   if(D.day0){
-    bh+='<div class="bench-card bench-card-day0"><div class="bench-lbl">Day 0</div>'+
+    bh+='<div class="bench-card bench-card-day0">'+
+      '<div class="bench-lbl">Since Day 0</div>'+
       '<div class="bench-base">'+fmtUsd(D.day0.equity)+'</div>'+
       '<div>'+deltaHtml(D.day0.delta,D.day0.pct)+'</div></div>';
   }
   (D.benchmarks||[]).forEach(function(b){
-    bh+='<div class="bench-card"><div class="bench-lbl">vs '+b.label+'</div>'+
+    bh+='<div class="bench-card">'+
+      '<div class="bench-lbl">vs '+b.label+'</div>'+
       (b.equity!=null?'<div class="bench-base">'+fmtUsd(b.equity)+'</div>':'<div class="bench-base bench-na">—</div>')+
       '<div>'+deltaHtml(b.delta,b.pct)+'</div></div>';
   });
   document.getElementById('benchmarks').innerHTML=bh;
 
+  // ── Token-first grouped table ────────────────────────────────────────────────
   var COLSPAN=2+L.length;
-  var sP=D.positions.slice().sort(function(a,b){return b.net-a.net;});
-  var sW=(D.walletTokens||[]).slice().sort(function(a,b){return b.usd-a.usd;});
+
+  // Group DeFi positions by their primary token(s)
+  // Key = sorted supply tokens joined (e.g. "FRAX+USDC" or "siUSD")
+  function tokKey(p){
+    return(p.supplied||[]).map(function(x){return x.token;}).sort().join('+') || 'other';
+  }
+  var groups={},groupOrder=[];
+  D.positions.slice().sort(function(a,b){return b.net-a.net;}).forEach(function(p){
+    var k=tokKey(p);
+    if(!groups[k]){groups[k]=[];groupOrder.push(k);}
+    groups[k].push(p);
+  });
+  // Sort groups by total net desc
+  groupOrder.sort(function(a,b){
+    var sa=groups[a].reduce(function(s,p){return s+p.net;},0);
+    var sb=groups[b].reduce(function(s,p){return s+p.net;},0);
+    return sb-sa;
+  });
+
   var rows=[];
+  var totalEquity=eq;
+
   function mRow(hist,lbl,kl,cur,kind,getH){
     var now='<td class="now-cell'+(cur<0?' neg':'')+'">'+fmtUsd(cur)+'</td>';
     var hc=L.map(function(h){var hh=hist&&hist[String(h)];if(!hh)return emptyCell();return hh.absent?newCell():histCell(cur,getH(hh),kind);}).join('');
     return'<tr class="subrow '+kl+'"><td>'+lbl+'</td>'+now+hc+'</tr>';
   }
-  if(sP.length)rows.push('<tr class="section-divider"><td colspan="'+COLSPAN+'">DeFi positions</td></tr>');
-  sP.forEach(function(p){
-    var comp=(p.supplied||[]).map(function(x){return x.token;}).join('+')+'/'+(p.borrowed&&p.borrowed.length?p.borrowed.map(function(x){return x.token;}).join('+'):'—');
-    var hrLbl=p.healthPct!=null?p.healthPct+'% to liq':(p.healthRate!=null?p.healthRate.toFixed(4):null);
-    var hrC=hrLbl!=null?'<span class="pill '+hrCls(p.healthRate)+' hr-pill">'+hrLbl+'</span>':'<span class="pill gray hr-pill">no debt</span>';
-    rows.push('<tr class="pos-header '+hrHdrCls(p.healthRate)+'"><td colspan="'+COLSPAN+'">'+
-      '<span class="protocol">'+p.protocol+'</span>'+
-      '<span class="chain">'+p.chain+'</span>'+
-      '<span class="comp">'+comp+'</span>'+hrC+'</td></tr>');
-    if(p.borSum&&p.borSum>0.5){
-      rows.push(mRow(p.history,'Collateral','collat',p.supSum,'asset',function(h){return h.supSum;}));
-      rows.push(mRow(p.history,'Debt','debt',p.borSum,'liability',function(h){return h.borSum;}));
-      rows.push(mRow(p.history,'Net','net',p.net,'asset',function(h){return h.net;}));
-    }else{rows.push(mRow(p.history,'Balance','bal',p.supSum,'asset',function(h){return h.supSum;}));}
+
+  if(groupOrder.length){
+    rows.push('<tr class="section-divider"><td colspan="'+COLSPAN+'">DeFi positions</td></tr>');
+  }
+  groupOrder.forEach(function(k){
+    var ps=groups[k];
+    var groupNet=ps.reduce(function(s,p){return s+p.net;},0);
+    var groupSup=ps.reduce(function(s,p){return s+p.supSum;},0);
+    var groupBor=ps.reduce(function(s,p){return s+p.borSum;},0);
+    var tokDisplay=k.replace(/\+/g,' + ');
+    var protos=ps.map(function(p){return p.protocol;}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', ');
+    var chains=ps.map(function(p){return p.chain;}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', ');
+    var groupSubtitle=protos+(chains?' · '+chains:'');
+
+    // Group header row — shows token name + aggregated net
+    rows.push(
+      '<tr class="tok-group-hdr">'+
+        '<td colspan="'+COLSPAN+'">'+
+          '<span class="tok-group-name">'+tokDisplay+'</span>'+
+          (ps.length>1?'<span class="tok-group-sub">'+groupSubtitle+'</span>':'')+
+        '</td>'+
+      '</tr>'
+    );
+
+    // Individual position rows within the group
+    ps.forEach(function(p){
+      var bor=p.borrowed&&p.borrowed.length?p.borrowed.map(function(x){return x.token;}).join('+'):null;
+      var hrLbl=p.healthPct!=null?p.healthPct+'% to liq':(p.healthRate!=null?p.healthRate.toFixed(4):null);
+      var hrCell=hrLbl!=null?'<span class="pill '+hrCls(p.healthRate)+' hr-pill">'+hrLbl+'</span>':'<span class="pill gray hr-pill">no debt</span>';
+      // Protocol + chain in smaller text; borrow pair if present
+      var subInfo='<span class="proto-name">'+p.protocol+'</span>'+
+        '<span class="proto-chain">'+p.chain+'</span>'+
+        (bor?'<span class="proto-pair">borrows '+bor+'</span>':'')+
+        hrCell;
+      rows.push('<tr class="pos-header '+hrHdrCls(p.healthRate)+'"><td colspan="'+COLSPAN+'">'+subInfo+'</td></tr>');
+      if(p.borSum&&p.borSum>0.5){
+        rows.push(mRow(p.history,'Collateral','collat',p.supSum,'asset',function(h){return h.supSum;}));
+        rows.push(mRow(p.history,'Debt','debt',p.borSum,'liability',function(h){return h.borSum;}));
+        rows.push(mRow(p.history,'Net','net',p.net,'asset',function(h){return h.net;}));
+      }else{
+        rows.push(mRow(p.history,'Balance','bal',p.supSum,'asset',function(h){return h.supSum;}));
+      }
+    });
   });
-  if(sW.length)rows.push('<tr class="section-divider"><td colspan="'+COLSPAN+'">Wallet tokens</td></tr>');
+
+  // Wallet tokens
+  var sW=(D.walletTokens||[]).slice().sort(function(a,b){return b.usd-a.usd;});
+  if(sW.length){rows.push('<tr class="section-divider"><td colspan="'+COLSPAN+'">Wallet tokens</td></tr>');}
   sW.forEach(function(w){
     var amt=w.amount>=1?Math.round(w.amount).toLocaleString('en-US'):w.amount.toFixed(4);
     var hc=L.map(function(h){var hh=w.history&&w.history[String(h)];if(!hh)return emptyCell();return hh.absent?newCell():histCell(w.usd,hh.usd,'asset');}).join('');
@@ -882,15 +1005,18 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
       '<span class="tok-chain">'+w.chain+'</span><span class="tok-qty">'+amt+'</span></td>'+
       '<td class="now-cell">'+fmtUsd(w.usd)+'</td>'+hc+'</tr>');
   });
+
+  // Totals
   var tc=L.map(function(h){
     var s=0,any=false;
-    sP.forEach(function(p){var hh=p.history&&p.history[String(h)];if(hh&&!hh.absent&&hh.net!=null){s+=hh.net;any=true;}});
+    D.positions.forEach(function(p){var hh=p.history&&p.history[String(h)];if(hh&&!hh.absent&&hh.net!=null){s+=hh.net;any=true;}});
     sW.forEach(function(w){var hh=w.history&&w.history[String(h)];if(hh&&!hh.absent&&hh.usd!=null){s+=hh.usd;any=true;}});
     return any?histCell(totalEquity,s,'asset'):emptyCell();
   }).join('');
   rows.push('<tr class="totals-row"><td>Total equity</td><td class="now-cell">'+fmtUsd(totalEquity)+'</td>'+tc+'</tr>');
   document.getElementById('tbody').innerHTML=rows.join('');
 
+  // Closed positions
   if(D.closedPositions&&D.closedPositions.length){
     document.getElementById('closed').innerHTML=
       '<div class="section-row" style="margin-top:26px"><div class="section-title">Closed since first snapshot</div></div>'+
@@ -904,13 +1030,15 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
       }).join('')+'</tbody></table>';
   }
 
+  // Live EVM total
   fetch('https://api.rabby.io/v1/user/total_balance?id='+D.wallet,{headers:{'accept':'application/json'}})
   .then(function(r){return r.json();}).then(function(j){
     var live=j&&j.total_usd_value;if(live==null)return;
     var diff=live-totalEquity,pct=totalEquity?(diff/totalEquity*100):0;
     var cls=Math.abs(pct)<0.01?'cell-flat':(diff>=0?'cell-up':'cell-down');
-    var el=document.getElementById('live-line');
-    el.innerHTML='Live EVM: <strong>'+fmtUsd(live)+'</strong> <span class="'+cls+'" style="font-size:10px">'+(diff>=0?'▲':'▼')+' '+Math.abs(pct).toFixed(2)+'%</span>';
+    document.getElementById('live-line').innerHTML=
+      'Live EVM: <strong>'+fmtUsd(live)+'</strong> <span class="'+cls+'" style="font-size:10px">'+
+      (diff>=0?'▲':'▼')+' '+Math.abs(pct).toFixed(2)+'%</span>';
   }).catch(function(){});
 })();
 """
@@ -921,7 +1049,7 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>DeFi Positions</title>
-<style>{DASHBOARD_CSS}{extra_css}</style>
+<style>{DASHBOARD_CSS}{EXTRA_CSS}</style>
 </head>
 <body>
 <nav class="page-nav">
@@ -940,21 +1068,24 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
     <div class="live-line" id="live-line">Fetching live total&hellip;</div>
   </div>
 </header>
+
 <div class="summary" id="summary"></div>
+
 <div class="section-row" style="margin-top:12px;margin-bottom:6px">
   <div class="section-title">Performance vs baseline</div>
 </div>
 <div class="bench-strip" id="benchmarks"></div>
+
 <div class="section-row">
   <div class="section-title">All holdings</div>
   <div class="legend">
     <span><span class="swatch" style="background:#34d399"></span>In your favour</span>
     <span><span class="swatch" style="background:#f87171"></span>Against you</span>
-    <span>Debt: lower&nbsp;=&nbsp;greener &middot; Threshold: 0.01%</span>
+    <span>Threshold&nbsp;0.01% &middot; positions grouped by token</span>
   </div>
 </div>
 <table class="tbl">
-  <thead><tr><th>Position / Token</th><th>Now</th>{lookback_headers}</tr></thead>
+  <thead><tr><th>Token / Position</th><th>Now</th>{lh_hdrs}</tr></thead>
   <tbody id="tbody"></tbody>
 </table>
 <div id="closed"></div>
@@ -968,7 +1099,6 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
 def render_history_html(snapshots: list[dict], generated_at: str) -> str:
     """Full chronological snapshot history page."""
     sorted_snaps = sorted(snapshots, key=lambda s: s.get("capturedAt", ""), reverse=True)
-
     d0_at = ""
     d0_path = Path(__file__).parent.parent / "outputs/snapshots/day0.json"
     if d0_path.exists():
@@ -976,7 +1106,6 @@ def render_history_html(snapshots: list[dict], generated_at: str) -> str:
             d0_at = json.loads(d0_path.read_text()).get("capturedAt", "")
         except Exception:
             pass
-
     rows_html = ""
     for i, s in enumerate(sorted_snaps):
         eq   = s.get("reportedTotal") or 0
@@ -986,25 +1115,21 @@ def render_history_html(snapshots: list[dict], generated_at: str) -> str:
         count = (s.get("totals") or {}).get("count", 0)
         lr    = (s.get("totals") or {}).get("lowest_hr")
         tag   = ' <span style="font-size:10px;color:var(--amber)">Day 0</span>' if s.get("capturedAt") == d0_at else ""
-
         if delta is not None:
-            cls  = "cell-up" if delta >= 0 else "cell-down"
-            sign = "+" if delta >= 0 else ""
+            cls   = "cell-up" if delta >= 0 else "cell-down"
+            sign  = "+" if delta >= 0 else ""
             d_html = f'<span class="{cls}">{sign}${abs(delta):,.0f}</span>'
             if pct is not None:
                 d_html += f' <span class="{cls}" style="font-size:10px">({sign}{pct:.2f}%)</span>'
         else:
             d_html = "—"
-
         hr_cls  = "" if lr is None else ("cell-down" if lr < 1.05 else ("cell-flat" if lr < 1.15 else "cell-up"))
         hr_html = f'<span class="{hr_cls}">{lr:.4f}</span>' if lr else "—"
-
         rows_html += f"""<tr>
           <td style="text-align:left">{s.get("capturedAt","")}{tag}</td>
           <td>${eq:,.0f}</td><td>{d_html}</td>
           <td>{count}</td><td>{hr_html}</td>
         </tr>\n"""
-
     nav_css = """
 .page-nav{display:flex;gap:4px;margin-bottom:16px}
 .page-nav a{font-size:11px;font-weight:600;padding:5px 14px;border-radius:6px;
