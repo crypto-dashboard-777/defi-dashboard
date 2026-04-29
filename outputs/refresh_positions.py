@@ -30,7 +30,13 @@ SOL_WALLET = os.environ.get("SOL_WALLET", "6QcRFrTcHCZgKdtX83iusXVBvcz3vrwiKayRE
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Rabby/1.0"
 FILTER_USD = 50.0
 RABBY_BASE = "https://api.rabby.io/v1"
-LOOKBACKS_H = [12, 24, 48, 72, 168]
+LOOKBACKS_H = [12, 24, 36, 48, 168, 336]   # 168 = 7d, 336 = 14d
+
+BENCHMARK_DAYS = [
+    (30,  "1mo"),
+    (90,  "3mo"),
+    (365, "1y"),
+]
 SOL_RPC = "https://api.mainnet-beta.solana.com"
 SOL_MINT = "So11111111111111111111111111111111111111112"
 TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
@@ -563,6 +569,25 @@ def build_history(current: dict, snapshots: list[dict]):
         e["history"] = history
         enriched_wallet.append(e)
 
+    benchmarks = compute_benchmarks(current, snapshots)
+
+    # Day 0 baseline — permanent file written once
+    day0_info = None
+    day0_path = Path(__file__).parent.parent / "outputs/snapshots/day0.json"
+    if day0_path.exists():
+        try:
+            d0 = json.loads(day0_path.read_text())
+            d0_eq = d0.get("reportedTotal") or 0
+            cur_eq = current.get("reportedTotal") or 0
+            day0_info = {
+                "equity":  round(d0_eq, 2),
+                "at":      d0.get("capturedAt"),
+                "delta":   round(cur_eq - d0_eq, 2),
+                "pct":     round((cur_eq - d0_eq) / d0_eq * 100, 2) if d0_eq else 0,
+            }
+        except Exception:
+            pass
+
     return {
         **current,
         "positions": enriched_positions,
@@ -571,7 +596,41 @@ def build_history(current: dict, snapshots: list[dict]):
         "snapshotCount": len(snapshots),
         "earliestSnapshotAt": snapshots[0]["capturedAt"] if snapshots else current["capturedAt"],
         "lookbacksHours": LOOKBACKS_H,
+        "benchmarks": benchmarks,
+        "day0": day0_info,
     }
+
+
+def compute_benchmarks(current: dict, snapshots: list[dict]) -> list[dict]:
+    """Compare current total equity against medium/long-term benchmarks.
+    Uses a ±50 % time tolerance so the first match within half the window counts.
+    Returns list of {label, days, equity, delta, pct, at}."""
+    current_t  = parse_captured(current["capturedAt"])
+    cur_equity = current.get("reportedTotal") or 0
+    older = [s for s in snapshots
+             if s.get("capturedAt") and s["capturedAt"] != current["capturedAt"]
+             and parse_captured(s["capturedAt"]) < current_t]
+
+    result = []
+    for days, label in BENCHMARK_DAYS:
+        target     = current_t - timedelta(days=days)
+        tolerance  = timedelta(days=max(3, days * 0.5))
+        candidates = [s for s in older
+                      if abs(parse_captured(s["capturedAt"]) - target) <= tolerance]
+        if candidates:
+            best       = min(candidates, key=lambda s: abs(parse_captured(s["capturedAt"]) - target))
+            old_equity = best.get("reportedTotal") or 0
+            delta      = cur_equity - old_equity
+            pct        = (delta / old_equity * 100) if old_equity else 0
+            result.append({"label": label, "days": days,
+                           "equity": round(old_equity, 2),
+                           "delta":  round(delta, 2),
+                           "pct":    round(pct, 2),
+                           "at":     best["capturedAt"]})
+        else:
+            result.append({"label": label, "days": days,
+                           "equity": None, "delta": None, "pct": None, "at": None})
+    return result
 
 
 DASHBOARD_CSS = """
@@ -699,225 +758,160 @@ h1{font-size:16px;font-weight:600;letter-spacing:-.02em}
 """
 
 
+def _lh_label(h: int) -> str:
+    if h == 168:  return "7d ago"
+    if h == 336:  return "14d ago"
+    return f"{h}h ago"
+
+
+
+def _lh_label(h: int) -> str:
+    if h == 168: return "7d ago"
+    if h == 336: return "14d ago"
+    return f"{h}h ago"
+
+
 def render_dashboard_html(enriched: dict, generated_at: str) -> str:
-    """Build a self-contained HTML dashboard with all data inlined.
-    New layout: single unified table, vertical-stacked Collateral/Debt/Net sub-rows per
-    position, plain wallet tokens as single rows. Delta cells show the historical
-    absolute value, colored green/red by direction (asset up = green; debt up = red)."""
+    """Positions page: benchmark strip + per-position lookback table."""
     payload_json = json.dumps(enriched, separators=(",", ":"), default=str)
     payload_safe = payload_json.replace("</", "<\\/")
-    lookback_headers = "".join(
-        f"<th>{h}h ago</th>" if h < 168 else "<th>7d ago</th>" for h in LOOKBACKS_H
-    )
+    lookback_headers = "".join(f"<th>{_lh_label(h)}</th>" for h in LOOKBACKS_H)
 
-    js = r"""
+    extra_css = """
+.bench-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.bench-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;min-width:120px;flex:1}
+.bench-card-day0{border-color:var(--border-2);background:var(--surface-2)}
+.bench-lbl{font-size:9.5px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.06em;font-weight:600;margin-bottom:3px}
+.bench-base{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:2px}
+.bench-up{color:var(--green);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.bench-dn{color:var(--red);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.bench-na{color:var(--muted-2);font-size:11px}
+.bench-up small,.bench-dn small{font-size:10px;opacity:.85}
+.page-nav{display:flex;gap:4px;margin-bottom:16px}
+.page-nav a{font-size:11px;font-weight:600;padding:5px 14px;border-radius:6px;
+  border:1px solid var(--border);color:var(--muted);text-decoration:none;background:var(--surface)}
+.page-nav a:hover{color:var(--text);border-color:var(--border-2)}
+.page-nav a.active{color:var(--text);background:var(--surface-2);border-color:var(--border-2)}
+"""
+
+    js = """
 (function(){
-  var data = JSON.parse(document.getElementById('payload').textContent);
-  var L = data.lookbacksHours || [12,24,48,72,168];
-
-  function fmtUsd(n){ if(n==null) return '\u2014';
-    var o={style:'currency',currency:'USD',minimumFractionDigits:0,maximumFractionDigits:0};
-    return new Intl.NumberFormat('en-US',o).format(n); }
-  function hrCls(h){ if(h==null) return 'gray'; if(h<1.05) return 'red';
-    if(h<1.15) return 'amber'; return 'green'; }
-
-  // History coloring: gray when within $50 or 0.3% \u2014 avoids noise on large positions
-  function histCell(currentVal, historicalVal, kind){
-    if(historicalVal==null) return '<td class="cell-empty">\u2014</td>';
-    var diff = currentVal - historicalVal;
-    var threshold = Math.max(50, Math.abs(currentVal) * 0.003);
-    var cls = 'cell-flat';
-    if(Math.abs(diff) >= threshold){
-      if(kind==='liability'){ cls = diff>0 ? 'cell-down' : 'cell-up'; }
-      else                  { cls = diff>0 ? 'cell-up'   : 'cell-down'; }
-    }
-    return '<td class="'+cls+'">'+fmtUsd(historicalVal)+'</td>';
+  var D=JSON.parse(document.getElementById('payload').textContent);
+  var L=D.lookbacksHours||[12,24,36,48,168,336];
+  function fmtUsd(n){
+    if(n==null)return'—';
+    return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',
+      minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
   }
-  function newCell(){ return '<td class="cell-new">new</td>'; }
-  function emptyCell(){ return '<td class="cell-empty">\u2014</td>'; }
-  function hrHeaderCls(hr){
-    if(hr==null) return 'hr-none';
-    if(hr<1.05) return 'hr-red';
-    if(hr<1.15) return 'hr-amber';
-    return 'hr-green';
+  function fmtPct(p){if(p==null)return'—';return(p>=0?'+':'')+p.toFixed(2)+'%';}
+  function hrCls(h){return h==null?'gray':(h<1.05?'red':(h<1.15?'amber':'green'));}
+  function histCell(cur,hist,kind){
+    if(hist==null)return'<td class="cell-empty">—</td>';
+    var diff=cur-hist,thr=Math.max(10,Math.abs(cur)*0.0001),cls='cell-flat';
+    if(Math.abs(diff)>=thr)cls=kind==='liability'?(diff>0?'cell-down':'cell-up'):(diff>0?'cell-up':'cell-down');
+    return'<td class="'+cls+'">'+fmtUsd(hist)+'</td>';
   }
+  function newCell(){return'<td class="cell-new">new</td>';}
+  function emptyCell(){return'<td class="cell-empty">—</td>';}
+  function hrHdrCls(hr){return hr==null?'hr-none':(hr<1.05?'hr-red':(hr<1.15?'hr-amber':'hr-green'));}
 
-  // Header
-  document.getElementById('wallet').textContent = data.wallet;
-  document.getElementById('captured').textContent = 'Snapshot ' + data.capturedAt + ' UTC';
-  document.getElementById('source').textContent = data.source;
-  var histNote = document.getElementById('history-note');
-  if(data.snapshotCount<=1){
-    histNote.textContent = 'History: 1 snapshot \u2014 colors appear once we have \u22652.';
-  } else {
-    histNote.textContent = 'History: '+data.snapshotCount+' snapshots since '+data.earliestSnapshotAt+' UTC';
+  document.getElementById('wallet').textContent=D.wallet;
+  document.getElementById('captured').textContent='Snapshot '+D.capturedAt+' UTC';
+  document.getElementById('source').textContent=D.source;
+  document.getElementById('history-note').textContent=D.snapshotCount<=1
+    ?'Day 0 — lookback colours appear from the next snapshot'
+    :D.snapshotCount+' snapshots since '+D.earliestSnapshotAt+' UTC';
+
+  var t=D.totals,wt=t.walletTokensTotal||0,totalEquity=D.reportedTotal||(t.net+wt);
+  var hrPill='<span class="pill '+hrCls(t.lowest_hr)+'" style="font-size:12px;padding:3px 8px;">'+(t.lowest_hr!=null?t.lowest_hr.toFixed(4):'—')+'</span>';
+  document.getElementById('summary').innerHTML=[
+    ['Total equity',fmtUsd(totalEquity)],['DeFi net',fmtUsd(t.net)],
+    ['Wallet',fmtUsd(wt)],['Collateral',fmtUsd(t.sup)],
+    ['Debt',fmtUsd(t.bor)],['Lowest HR',hrPill]
+  ].map(function(c){return'<div class="cell"><div class="label">'+c[0]+'</div><div class="value">'+c[1]+'</div></div>';}).join('');
+
+  function deltaHtml(delta,pct){
+    if(delta==null)return'<span class="bench-na">no data yet</span>';
+    var cls=delta>=0?'bench-up':'bench-dn',arr=delta>=0?'▲':'▼';
+    return'<span class="'+cls+'">'+arr+' '+fmtUsd(Math.abs(delta))+' <small>('+fmtPct(pct)+')</small></span>';
   }
-
-  // Summary cards
-  var t = data.totals;
-  var walletTotal = (t.walletTokensTotal || 0);
-  // Use Rabby's reported total as canonical (avoids unverified token double-count)
-  var totalEquity = data.reportedTotal || (t.net + walletTotal);
-  var hrTxt = t.lowest_hr!=null?t.lowest_hr.toFixed(4):'\u2014';
-  var hrPill = '<span class="pill '+hrCls(t.lowest_hr)+'" style="font-size:12px;padding:3px 8px;">'+hrTxt+'</span>';
-  var cells = [
-    ['Total equity', fmtUsd(totalEquity), false],
-    ['DeFi net', fmtUsd(t.net), false],
-    ['Wallet tokens', fmtUsd(walletTotal), false],
-    ['Collateral', fmtUsd(t.sup), false],
-    ['Debt', fmtUsd(t.bor), false],
-    ['Lowest HR', hrPill, true]
-  ];
-  document.getElementById('summary').innerHTML = cells.map(function(c){
-    return '<div class="cell"><div class="label">'+c[0]+'</div>'+
-      '<div class="value'+(c[2]?' small':'')+'">'+c[1]+'</div></div>';
-  }).join('');
-
-  var COLSPAN = 2 + L.length;  // label + Now + N history columns
-
-  // Build unified table
-  var sortedP = data.positions.slice().sort(function(a,b){ return b.net - a.net; });
-  var sortedW = (data.walletTokens||[]).slice().sort(function(a,b){return b.usd - a.usd});
-  var rows = [];
-
-  function metricRow(history, label, kindLower, currentVal, kind, getHistVal){
-    var nowHtml = '<td class="now-cell'+(currentVal<0?' neg':'')+'">'+fmtUsd(currentVal)+'</td>';
-    var histHtml = L.map(function(h){
-      var hh = history && history[String(h)];
-      if(!hh) return emptyCell();
-      if(hh.absent) return newCell();
-      return histCell(currentVal, getHistVal(hh), kind);
-    }).join('');
-    return '<tr class="subrow '+kindLower+'"><td>'+label+'</td>'+nowHtml+histHtml+'</tr>';
+  var bh='';
+  if(D.day0){
+    bh+='<div class="bench-card bench-card-day0"><div class="bench-lbl">Day 0</div>'+
+      '<div class="bench-base">'+fmtUsd(D.day0.equity)+'</div>'+
+      '<div>'+deltaHtml(D.day0.delta,D.day0.pct)+'</div></div>';
   }
-
-  // DeFi positions: header + Collateral / Debt / Net sub-rows
-  if(sortedP.length){
-    rows.push('<tr class="section-divider"><td colspan="'+COLSPAN+'">DeFi positions</td></tr>');
-  }
-  sortedP.forEach(function(p){
-    var compTokens = (p.supplied||[]).map(function(x){return x.token}).join('+') + ' / ' +
-                     ((p.borrowed||[]).length ? p.borrowed.map(function(x){return x.token}).join('+') : '\u2014');
-    var hrLabel = p.healthPct!=null ? p.healthPct+'% to liq'
-                : p.healthRate!=null ? p.healthRate.toFixed(4) : null;
-    var hrCell = hrLabel!=null
-      ? '<span class="pill '+hrCls(p.healthRate)+' hr-pill">'+hrLabel+'</span>'
-      : '<span class="pill gray hr-pill">no debt</span>';
-
-    rows.push(
-      '<tr class="pos-header '+hrHeaderCls(p.healthRate)+'">'+
-        '<td colspan="'+COLSPAN+'">'+
-          '<span class="protocol">'+p.protocol+'</span>'+
-          '<span class="chain">'+p.chain+'</span>'+
-          '<span class="comp">'+compTokens+'</span>'+
-          hrCell+
-        '</td>'+
-      '</tr>'
-    );
-
-    var hasDebt = p.borSum && p.borSum > 0.5;
-    if(hasDebt){
-      rows.push(metricRow(p.history, 'Collateral', 'collat', p.supSum, 'asset',
-        function(hh){return hh.supSum}));
-      rows.push(metricRow(p.history, 'Debt', 'debt', p.borSum, 'liability',
-        function(hh){return hh.borSum}));
-      rows.push(metricRow(p.history, 'Net', 'net', p.net, 'asset',
-        function(hh){return hh.net}));
-    } else {
-      rows.push(metricRow(p.history, 'Balance', 'bal', p.supSum, 'asset',
-        function(hh){return hh.supSum}));
-    }
+  (D.benchmarks||[]).forEach(function(b){
+    bh+='<div class="bench-card"><div class="bench-lbl">vs '+b.label+'</div>'+
+      (b.equity!=null?'<div class="bench-base">'+fmtUsd(b.equity)+'</div>':'<div class="bench-base bench-na">—</div>')+
+      '<div>'+deltaHtml(b.delta,b.pct)+'</div></div>';
   });
+  document.getElementById('benchmarks').innerHTML=bh;
 
-  // Wallet tokens: single row each
-  if(sortedW.length){
-    rows.push('<tr class="section-divider"><td colspan="'+COLSPAN+'">Wallet tokens (not deployed)</td></tr>');
+  var COLSPAN=2+L.length;
+  var sP=D.positions.slice().sort(function(a,b){return b.net-a.net;});
+  var sW=(D.walletTokens||[]).slice().sort(function(a,b){return b.usd-a.usd;});
+  var rows=[];
+  function mRow(hist,lbl,kl,cur,kind,getH){
+    var now='<td class="now-cell'+(cur<0?' neg':'')+'">'+fmtUsd(cur)+'</td>';
+    var hc=L.map(function(h){var hh=hist&&hist[String(h)];if(!hh)return emptyCell();return hh.absent?newCell():histCell(cur,getH(hh),kind);}).join('');
+    return'<tr class="subrow '+kl+'"><td>'+lbl+'</td>'+now+hc+'</tr>';
   }
-  sortedW.forEach(function(wt){
-    var amountStr = wt.amount>=1?Math.round(wt.amount).toLocaleString('en-US'):wt.amount.toFixed(4);
-    var nowHtml = '<td class="now-cell">'+fmtUsd(wt.usd)+'</td>';
-    var histHtml = L.map(function(h){
-      var hh = wt.history && wt.history[String(h)];
-      if(!hh) return emptyCell();
-      if(hh.absent) return newCell();
-      return histCell(wt.usd, hh.usd, 'asset');
-    }).join('');
-    rows.push(
-      '<tr class="wallet-row">'+
-        '<td><span class="tok-name">'+wt.token+'</span>'+
-          '<span class="tok-chain">'+wt.chain+'</span>'+
-          '<span class="tok-qty">'+amountStr+'</span></td>'+
-        nowHtml+histHtml+
-      '</tr>'
-    );
+  if(sP.length)rows.push('<tr class="section-divider"><td colspan="'+COLSPAN+'">DeFi positions</td></tr>');
+  sP.forEach(function(p){
+    var comp=(p.supplied||[]).map(function(x){return x.token;}).join('+')+'/'+(p.borrowed&&p.borrowed.length?p.borrowed.map(function(x){return x.token;}).join('+'):'—');
+    var hrLbl=p.healthPct!=null?p.healthPct+'% to liq':(p.healthRate!=null?p.healthRate.toFixed(4):null);
+    var hrC=hrLbl!=null?'<span class="pill '+hrCls(p.healthRate)+' hr-pill">'+hrLbl+'</span>':'<span class="pill gray hr-pill">no debt</span>';
+    rows.push('<tr class="pos-header '+hrHdrCls(p.healthRate)+'"><td colspan="'+COLSPAN+'">'+
+      '<span class="protocol">'+p.protocol+'</span>'+
+      '<span class="chain">'+p.chain+'</span>'+
+      '<span class="comp">'+comp+'</span>'+hrC+'</td></tr>');
+    if(p.borSum&&p.borSum>0.5){
+      rows.push(mRow(p.history,'Collateral','collat',p.supSum,'asset',function(h){return h.supSum;}));
+      rows.push(mRow(p.history,'Debt','debt',p.borSum,'liability',function(h){return h.borSum;}));
+      rows.push(mRow(p.history,'Net','net',p.net,'asset',function(h){return h.net;}));
+    }else{rows.push(mRow(p.history,'Balance','bal',p.supSum,'asset',function(h){return h.supSum;}));}
   });
-
-  // Grand total row: "now" uses Rabby's reported total; historical uses sum of visible items
-  var grandComputed = sortedP.reduce(function(a,p){return a+p.net},0) +
-                      sortedW.reduce(function(a,t){return a+t.usd},0);
-  var totalCells = L.map(function(h){
-    var sum = 0, any = false;
-    sortedP.forEach(function(p){
-      var hh = p.history && p.history[String(h)];
-      if(hh && !hh.absent && hh.net!=null){ sum += hh.net; any = true; }
-    });
-    sortedW.forEach(function(t){
-      var hh = t.history && t.history[String(h)];
-      if(hh && !hh.absent && hh.usd!=null){ sum += hh.usd; any = true; }
-    });
-    if(!any) return emptyCell();
-    return histCell(totalEquity, sum, 'asset');
+  if(sW.length)rows.push('<tr class="section-divider"><td colspan="'+COLSPAN+'">Wallet tokens</td></tr>');
+  sW.forEach(function(w){
+    var amt=w.amount>=1?Math.round(w.amount).toLocaleString('en-US'):w.amount.toFixed(4);
+    var hc=L.map(function(h){var hh=w.history&&w.history[String(h)];if(!hh)return emptyCell();return hh.absent?newCell():histCell(w.usd,hh.usd,'asset');}).join('');
+    rows.push('<tr class="wallet-row"><td><span class="tok-name">'+w.token+'</span>'+
+      '<span class="tok-chain">'+w.chain+'</span><span class="tok-qty">'+amt+'</span></td>'+
+      '<td class="now-cell">'+fmtUsd(w.usd)+'</td>'+hc+'</tr>');
+  });
+  var tc=L.map(function(h){
+    var s=0,any=false;
+    sP.forEach(function(p){var hh=p.history&&p.history[String(h)];if(hh&&!hh.absent&&hh.net!=null){s+=hh.net;any=true;}});
+    sW.forEach(function(w){var hh=w.history&&w.history[String(h)];if(hh&&!hh.absent&&hh.usd!=null){s+=hh.usd;any=true;}});
+    return any?histCell(totalEquity,s,'asset'):emptyCell();
   }).join('');
-  rows.push('<tr class="totals-row"><td>Total equity</td>'+
-    '<td class="now-cell">'+fmtUsd(totalEquity)+'</td>'+totalCells+'</tr>');
+  rows.push('<tr class="totals-row"><td>Total equity</td><td class="now-cell">'+fmtUsd(totalEquity)+'</td>'+tc+'</tr>');
+  document.getElementById('tbody').innerHTML=rows.join('');
 
-  document.getElementById('tbody').innerHTML = rows.join('');
-
-  // Closed positions
-  if(data.closedPositions && data.closedPositions.length){
-    var c = document.getElementById('closed');
-    c.innerHTML = '<div class="section-row" style="margin-top:26px"><div class="section-title">Closed since first snapshot</div></div>'+
-      '<table class="cls-tbl"><thead><tr>'+
-      '<th style="text-align:left">Position</th><th>Last seen</th><th>Collateral</th><th>Debt</th><th>Net</th>'+
-      '</tr></thead><tbody>'+
-      data.closedPositions.map(function(q){
-        return '<tr><td><span style="font-weight:600">'+q.protocol+'</span>'+
-          '<span class="tok-chain">'+q.chain+'</span>'+
-          '<span style="color:var(--muted);font-size:11px;margin-left:8px">'+q.name+'</span></td>'+
+  if(D.closedPositions&&D.closedPositions.length){
+    document.getElementById('closed').innerHTML=
+      '<div class="section-row" style="margin-top:26px"><div class="section-title">Closed since first snapshot</div></div>'+
+      '<table class="cls-tbl"><thead><tr><th style="text-align:left">Position</th>'+
+      '<th>Last seen</th><th>Collateral</th><th>Debt</th><th>Net</th></tr></thead><tbody>'+
+      D.closedPositions.map(function(q){
+        return'<tr><td><b>'+q.protocol+'</b><span class="tok-chain">'+q.chain+
+          '</span> <span style="color:var(--muted);font-size:11px">'+q.name+'</span></td>'+
           '<td style="color:var(--muted-2);font-size:11px">'+q.lastSeenAt+'</td>'+
-          '<td>'+fmtUsd(q.supSum)+'</td>'+
-          '<td>'+fmtUsd(q.borSum)+'</td>'+
-          '<td>'+fmtUsd(q.net)+'</td></tr>';
-      }).join('')+
-      '</tbody></table>';
+          '<td>'+fmtUsd(q.supSum)+'</td><td>'+fmtUsd(q.borSum)+'</td><td>'+fmtUsd(q.net)+'</td></tr>';
+      }).join('')+'</tbody></table>';
   }
 
-  // Live refresh: hit Rabby's public API for fresh "Now" totals on every load.
-  // Historical columns stay frozen at snapshot-time values (that's the whole point).
-  // Note: per-position live patching would need full re-normalization in JS; for now
-  // we just refresh the top-level summary so the user sees live totals on each load.
-  function liveRefresh(){
-    var addr = data.wallet;
-    var el = document.getElementById('live-line');
-    if(!el) return;
-    fetch('https://api.rabby.io/v1/user/total_balance?id='+addr, {
-      headers: {'accept':'application/json'}
-    }).then(function(r){ return r.json(); }).then(function(j){
-      var live = j && j.total_usd_value;
-      if(live!=null){
-        var diff = live - totalEquity;
-        var pct = totalEquity ? (diff/totalEquity*100) : 0;
-        var arrow = diff>=0 ? '\u25B2' : '\u25BC';
-        var cls = Math.abs(pct)<0.5 ? 'cell-flat' : (diff>=0 ? 'cell-up' : 'cell-down');
-        el.innerHTML = 'Live: <strong>'+fmtUsd(live)+'</strong>'+
-          ' <span class="'+cls+'" style="font-size:10px">'+arrow+' '+
-          Math.abs(pct).toFixed(2)+'%</span>';
-      } else {
-        el.textContent = 'Live unavailable';
-      }
-    }).catch(function(){ el.textContent = ''; });
-  }
-  liveRefresh();
+  fetch('https://api.rabby.io/v1/user/total_balance?id='+D.wallet,{headers:{'accept':'application/json'}})
+  .then(function(r){return r.json();}).then(function(j){
+    var live=j&&j.total_usd_value;if(live==null)return;
+    var diff=live-totalEquity,pct=totalEquity?(diff/totalEquity*100):0;
+    var cls=Math.abs(pct)<0.01?'cell-flat':(diff>=0?'cell-up':'cell-down');
+    var el=document.getElementById('live-line');
+    el.innerHTML='Live EVM: <strong>'+fmtUsd(live)+'</strong> <span class="'+cls+'" style="font-size:10px">'+(diff>=0?'▲':'▼')+' '+Math.abs(pct).toFixed(2)+'%</span>';
+  }).catch(function(){});
 })();
 """
 
@@ -925,68 +919,148 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DeFi Positions — Rabby snapshot &amp; history</title>
-<style>{DASHBOARD_CSS}</style>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DeFi Positions</title>
+<style>{DASHBOARD_CSS}{extra_css}</style>
 </head>
 <body>
+<nav class="page-nav">
+  <a href="index.html" class="active">Positions</a>
+  <a href="history.html">History</a>
+</nav>
 <header class="page">
   <div class="hdr-left">
-    <div class="hdr-title">
-      <span class="live-dot"></span>
-      <h1>DeFi Positions</h1>
-    </div>
+    <div class="hdr-title"><span class="live-dot"></span><h1>DeFi Positions</h1></div>
     <div class="wallet" id="wallet"></div>
   </div>
   <div class="hdr-right">
     <div class="snap-time" id="captured"></div>
     <div class="source" id="source"></div>
     <div class="hist" id="history-note"></div>
-    <div class="live-line" id="live-line">Fetching live total…</div>
+    <div class="live-line" id="live-line">Fetching live total&hellip;</div>
   </div>
 </header>
-
 <div class="summary" id="summary"></div>
-
+<div class="section-row" style="margin-top:12px;margin-bottom:6px">
+  <div class="section-title">Performance vs baseline</div>
+</div>
+<div class="bench-strip" id="benchmarks"></div>
 <div class="section-row">
-  <div class="section-title">All holdings — values at each historical snapshot</div>
+  <div class="section-title">All holdings</div>
   <div class="legend">
-    <span><span class="swatch" style="background:#34d399"></span>Moved in your favor</span>
-    <span><span class="swatch" style="background:#f87171"></span>Moved against you</span>
-    <span>Debt: lower&nbsp;=&nbsp;greener &nbsp;·&nbsp; Gray = within $50 or 0.3%</span>
+    <span><span class="swatch" style="background:#34d399"></span>In your favour</span>
+    <span><span class="swatch" style="background:#f87171"></span>Against you</span>
+    <span>Debt: lower&nbsp;=&nbsp;greener &middot; Threshold: 0.01%</span>
   </div>
 </div>
 <table class="tbl">
-  <thead>
-    <tr>
-      <th>Position / Token</th>
-      <th>Now</th>
-      {lookback_headers}
-    </tr>
-  </thead>
+  <thead><tr><th>Position / Token</th><th>Now</th>{lookback_headers}</tr></thead>
   <tbody id="tbody"></tbody>
 </table>
-
 <div id="closed"></div>
-
-<div class="footnote">Generated {generated_at} UTC · Positions/tokens over $50 · Live total fetched on each load</div>
-
+<div class="footnote">Generated {generated_at} UTC &middot; Refreshes every 12h &middot; Positions over $50</div>
 <script id="payload" type="application/json">{payload_safe}</script>
 <script>{js}</script>
-</body>
-</html>
+</body></html>"""
+    return html
+
+
+def render_history_html(snapshots: list[dict], generated_at: str) -> str:
+    """Full chronological snapshot history page."""
+    sorted_snaps = sorted(snapshots, key=lambda s: s.get("capturedAt", ""), reverse=True)
+
+    d0_at = ""
+    d0_path = Path(__file__).parent.parent / "outputs/snapshots/day0.json"
+    if d0_path.exists():
+        try:
+            d0_at = json.loads(d0_path.read_text()).get("capturedAt", "")
+        except Exception:
+            pass
+
+    rows_html = ""
+    for i, s in enumerate(sorted_snaps):
+        eq   = s.get("reportedTotal") or 0
+        prev = sorted_snaps[i + 1].get("reportedTotal") or 0 if i + 1 < len(sorted_snaps) else None
+        delta = round(eq - prev, 0) if prev is not None else None
+        pct   = round((eq - prev) / prev * 100, 2) if prev else None
+        count = (s.get("totals") or {}).get("count", 0)
+        lr    = (s.get("totals") or {}).get("lowest_hr")
+        tag   = ' <span style="font-size:10px;color:var(--amber)">Day 0</span>' if s.get("capturedAt") == d0_at else ""
+
+        if delta is not None:
+            cls  = "cell-up" if delta >= 0 else "cell-down"
+            sign = "+" if delta >= 0 else ""
+            d_html = f'<span class="{cls}">{sign}${abs(delta):,.0f}</span>'
+            if pct is not None:
+                d_html += f' <span class="{cls}" style="font-size:10px">({sign}{pct:.2f}%)</span>'
+        else:
+            d_html = "—"
+
+        hr_cls  = "" if lr is None else ("cell-down" if lr < 1.05 else ("cell-flat" if lr < 1.15 else "cell-up"))
+        hr_html = f'<span class="{hr_cls}">{lr:.4f}</span>' if lr else "—"
+
+        rows_html += f"""<tr>
+          <td style="text-align:left">{s.get("capturedAt","")}{tag}</td>
+          <td>${eq:,.0f}</td><td>{d_html}</td>
+          <td>{count}</td><td>{hr_html}</td>
+        </tr>\n"""
+
+    nav_css = """
+.page-nav{display:flex;gap:4px;margin-bottom:16px}
+.page-nav a{font-size:11px;font-weight:600;padding:5px 14px;border-radius:6px;
+  border:1px solid var(--border);color:var(--muted);text-decoration:none;background:var(--surface)}
+.page-nav a:hover{color:var(--text);border-color:var(--border-2)}
+.page-nav a.active{color:var(--text);background:var(--surface-2);border-color:var(--border-2)}
 """
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DeFi History</title>
+<style>{DASHBOARD_CSS}{nav_css}</style>
+</head>
+<body>
+<nav class="page-nav">
+  <a href="index.html">Positions</a>
+  <a href="history.html" class="active">History</a>
+</nav>
+<header class="page">
+  <div class="hdr-left">
+    <div class="hdr-title"><span class="live-dot"></span><h1>Snapshot History</h1></div>
+  </div>
+  <div class="hdr-right">
+    <div class="snap-time">{len(sorted_snaps)} snapshots total</div>
+    <div class="source">12h refresh cadence</div>
+  </div>
+</header>
+<table class="tbl" style="margin-top:12px">
+  <thead><tr>
+    <th style="text-align:left">Captured (UTC)</th>
+    <th>Total equity</th><th>vs previous</th>
+    <th>Positions</th><th>Lowest HR</th>
+  </tr></thead>
+  <tbody>{rows_html}</tbody>
+</table>
+<div class="footnote">Generated {generated_at} UTC</div>
+</body></html>"""
     return html
 
 
 def render_and_write_dashboard(snapshots_dir: Path, dashboard_path: Path, current: dict):
     snapshots = load_all_snapshots(snapshots_dir)
-    enriched = build_history(current, snapshots)
-    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    html = render_dashboard_html(enriched, generated_at)
+    enriched  = build_history(current, snapshots)
+    gen_at    = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+    html = render_dashboard_html(enriched, gen_at)
     dashboard_path.parent.mkdir(parents=True, exist_ok=True)
     dashboard_path.write_text(html, encoding="utf-8")
-    print(f"[refresh] Rendered dashboard ({len(html):,} bytes, {len(snapshots)} snapshots) to {dashboard_path}")
+    print(f"[refresh] Positions page ({len(html):,} bytes, {len(snapshots)} snapshots) → {dashboard_path}")
+
+    history_path = dashboard_path.parent / "history.html"
+    hist_html    = render_history_html(snapshots + [current], gen_at)
+    history_path.write_text(hist_html, encoding="utf-8")
+    print(f"[refresh] History page ({len(hist_html):,} bytes) → {history_path}")
 
 
 # ────────────────────────── Solana wallet ──────────────────────────
