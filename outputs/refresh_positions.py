@@ -1172,6 +1172,226 @@ def _parse_jupiter_text(text: str) -> tuple[list[dict], float]:
     return positions, sol_net
 
 
+def _jup_token_meta() -> dict:
+    """Fetch Jupiter verified token list → {mint_address: token_dict}."""
+    try:
+        req = urllib.request.Request(
+            "https://tokens.jup.ag/tokens?tags=verified",
+            headers={"accept": "application/json", "User-Agent": UA},
+        )
+        with urllib.request.urlopen(req, timeout=25) as r:
+            return {t["address"]: t for t in json.loads(r.read())}
+    except Exception as e:
+        print(f"[refresh] Jupiter token meta failed: {e}", file=sys.stderr)
+        return {}
+
+
+def _jup_prices(mints: set) -> dict:
+    """Fetch prices from Jupiter Price API v2 → {mint: {price: ...}}."""
+    if not mints:
+        return {}
+    try:
+        ids = ",".join(mints)
+        req = urllib.request.Request(
+            f"https://api.jup.ag/price/v2?ids={ids}",
+            headers={"accept": "application/json", "User-Agent": UA},
+        )
+        with urllib.request.urlopen(req, timeout=25) as r:
+            return json.loads(r.read()).get("data", {})
+    except Exception as e:
+        print(f"[refresh] Jupiter price API failed: {e}", file=sys.stderr)
+        return {}
+
+
+def _solana_mint_decimals(mint: str) -> int:
+    """Get token decimals directly from Solana RPC for a mint address."""
+    try:
+        result = _solana_rpc("getAccountInfo", [mint, {"encoding": "jsonParsed"}])
+        if result:
+            info = (result.get("value") or {}).get("data", {}).get("parsed", {}).get("info", {})
+            return int(info.get("decimals", 6))
+    except Exception:
+        pass
+    return 6  # safe default (USDC/USDT)
+
+
+USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+
+# Hard-coded overrides for tokens not in Jupiter's verified list
+KNOWN_SOL_MINTS: dict[str, dict] = {
+    "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": {"symbol": "USDC",  "decimals": 6},
+    "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB":  {"symbol": "USDT",  "decimals": 6},
+    "So11111111111111111111111111111111111111112":    {"symbol": "SOL",   "decimals": 9},
+    "5Y8NV33Vv7WbnLfq3zBcKSdYPrk7g2KoiQoe7M2tcxp5": {"symbol": "ONyc",  "decimals": 9},
+    "3b8X44fLF9ooXaUm3hhSgjpmVs6rZZ3pPoGnGahc3Uu7": {"symbol": "PRIME", "decimals": 6},
+}
+
+
+def loopscale_positions(meta: dict | None = None) -> tuple[list[dict], float]:
+    """Fetch active Loopscale lending positions via REST API — no browser required.
+
+    API: POST https://tars.loopscale.com/v1/markets/loans/info
+    Response shape: {"loanInfos": [{loan:{closed:bool,...}, ledgers:[...], collateral:[...]}]}
+    Ratios are scaled ×1,000,000 (e.g. 900000 = 90% LTV).
+
+    Returns (positions, total_net_usd).
+    """
+    url = "https://tars.loopscale.com/v1/markets/loans/info"
+    payload = json.dumps({
+        "borrowers": [SOL_WALLET],
+        "page": 0,
+        "pageSize": 50,
+    }).encode()
+    req = urllib.request.Request(
+        url, data=payload,
+        headers={"Content-Type": "application/json", "accept": "application/json", "User-Agent": UA},
+    )
+    with urllib.request.urlopen(req, timeout=30) as r:
+        data = json.loads(r.read())
+
+    loan_infos = data.get("loanInfos", [])
+    # Active = not closed AND has at least one active ledger
+    active = [li for li in loan_infos
+              if not li.get("loan", {}).get("closed", True) and li.get("ledgers")]
+    print(f"[refresh] Loopscale API: {len(active)} active / {len(loan_infos)} total loans")
+    if not active:
+        return [], 0.0
+
+    # Gather all mints we'll need for pricing
+    mints: set[str] = set()
+    for li in active:
+        for lg in li.get("ledgers", []):
+            mints.add(lg.get("principalMint") or "")
+        for col in li.get("collateral", []):
+            mints.add(col.get("assetMint") or "")
+    mints.discard("")
+
+    # Build event-based price fallback: latest usdPrice per mint from Loopscale events
+    event_prices: dict[str, float] = {}
+    for li in active:
+        for ev in li.get("events", []):
+            mint = ev.get("assetMint") or ""
+            price = ev.get("usdPrice")
+            if mint and price:
+                event_prices[mint] = float(price)  # later events overwrite earlier ones
+
+    if meta is None:
+        meta = _jup_token_meta()
+    price_data = _jup_prices(mints)
+
+    positions = []
+    total_net = 0.0
+
+    for li in active:
+        loan    = li.get("loan", {})
+        loan_id = str(loan.get("address") or "")[:8]
+        ledger  = li["ledgers"][0]  # one active ledger per loan
+        cols    = li.get("collateral", [])
+        col_entry = cols[0] if cols else {}
+
+        prin_mint = ledger.get("principalMint") or ""
+        col_mint  = col_entry.get("assetMint") or ""
+        prin_raw  = int(ledger.get("principalDue") or 0)
+        col_raw   = int(col_entry.get("amount") or 0)
+
+        # Decimals: known-mints table → Jupiter meta → Solana RPC fallback
+        prin_dec = int((KNOWN_SOL_MINTS.get(prin_mint) or meta.get(prin_mint) or {}).get("decimals")
+                       or _solana_mint_decimals(prin_mint))
+        col_dec  = int((KNOWN_SOL_MINTS.get(col_mint)  or meta.get(col_mint)  or {}).get("decimals")
+                       or _solana_mint_decimals(col_mint))
+
+        # Prices: Jupiter API → event fallback → USDC hardcode
+        prin_price = float((price_data.get(prin_mint) or {}).get("price") or
+                           event_prices.get(prin_mint) or
+                           (1.0 if prin_mint == USDC_MINT else 0.0))
+        col_price  = float((price_data.get(col_mint)  or {}).get("price") or
+                           event_prices.get(col_mint) or 0.0)
+
+        # Symbols: known-mints table → Jupiter meta → mint abbreviation
+        prin_sym = ((KNOWN_SOL_MINTS.get(prin_mint) or meta.get(prin_mint) or {}).get("symbol") or "USDC").upper()
+        col_sym  = ((KNOWN_SOL_MINTS.get(col_mint)  or meta.get(col_mint)  or {}).get("symbol") or col_mint[:6]).upper()
+
+        # USD amounts
+        prin_amount = prin_raw / (10 ** prin_dec)
+        col_amount  = col_raw  / (10 ** col_dec)
+        prin_usd    = prin_amount * prin_price
+        col_usd     = col_amount  * col_price
+        net_usd     = col_usd - prin_usd
+
+        # Health: % distance to liquidation
+        # lqtRatios scale = 1,000,000 (e.g. 900000 → 0.90 → 90% liquidation LTV)
+        health_pct  = None
+        health_rate = None
+        lqt_ratios  = ledger.get("lqtRatios") or []
+        if lqt_ratios and col_usd > 0 and prin_usd > 0:
+            liq_raw = lqt_ratios[0]
+            liq_ltv = liq_raw / 1_000_000 if liq_raw > 1 else float(liq_raw)
+            cur_ltv = prin_usd / col_usd
+            if 0 < cur_ltv < liq_ltv:
+                health_pct  = round((liq_ltv / cur_ltv - 1) * 100, 1)
+                health_rate = round(1.0 + health_pct / 100, 4)
+
+        positions.append({
+            "protocol":   "Loopscale",
+            "chain":      "Solana",
+            "chainId":    "sol",
+            "type":       "Lending",
+            "rabbyType":  "Lending",
+            "healthRate": health_rate,
+            "healthPct":  health_pct,
+            "supplied":   [{"token": col_sym,  "amount": col_amount,  "usd": col_usd}],
+            "borrowed":   [{"token": prin_sym, "amount": prin_amount, "usd": prin_usd}],
+            "rewards":    [],
+            "description": f"Loan {loan_id}",
+            "_supSum":  col_usd,
+            "_borSum":  prin_usd,
+            "_rewSum":  0.0,
+            "_net":     net_usd,
+            "_poolId":  loan_id,
+            "_source":  "loopscale-api",
+        })
+        total_net += net_usd
+        print(f"[refresh]   Loan {loan_id}: "
+              f"col={col_sym} ${col_usd:,.0f}  bor={prin_sym} ${prin_usd:,.0f}  "
+              f"net=${net_usd:,.0f}  health={health_pct}%")
+
+    return positions, total_net
+
+
+def fetch_sol_defi_positions() -> tuple[list[dict], float]:
+    """Primary entry-point for Solana DeFi positions.
+
+    Tries REST APIs first (Loopscale). Falls back to headless Playwright scrape
+    only if REST APIs return nothing.
+
+    Returns (positions, total_sol_net_usd).
+    """
+    positions: list[dict] = []
+    total_net = 0.0
+
+    # Shared token metadata (avoids duplicate 20 MB download)
+    try:
+        meta = _jup_token_meta()
+    except Exception:
+        meta = {}
+
+    # ── Loopscale REST API ──────────────────────────────────────────
+    try:
+        ls_pos, ls_net = loopscale_positions(meta=meta)
+        positions.extend(ls_pos)
+        total_net += ls_net
+    except Exception as e:
+        print(f"[refresh] Loopscale REST API failed: {e}", file=sys.stderr)
+
+    if positions:
+        print(f"[refresh] Solana DeFi via REST API: {len(positions)} positions, net=${total_net:,.0f}")
+        return positions, total_net
+
+    # ── Playwright fallback ─────────────────────────────────────────
+    print("[refresh] REST API returned no positions — falling back to Playwright scrape …")
+    return scrape_sol_defi_positions()
+
+
 def scrape_sol_defi_positions() -> tuple[list[dict], float]:
     """Headless-browser scrape of Jupiter portfolio page → (positions, sol_net_worth)."""
     try:
@@ -1255,10 +1475,31 @@ def main():
 
     sol_defi_positions, sol_net_worth = [], 0.0
     try:
-        sol_defi_positions, sol_net_worth = scrape_sol_defi_positions()
+        sol_defi_positions, sol_net_worth = fetch_sol_defi_positions()
         positions = positions + sol_defi_positions
     except Exception as e:
         print(f"[refresh] Jupiter scrape failed: {e}", file=sys.stderr)
+        # Fall back to last known Solana positions from previous snapshot
+        try:
+            _snap_dir = Path(args.snapshots_dir)
+            _prev_snaps = sorted(f for f in _snap_dir.glob("2*.json"))
+            if _prev_snaps:
+                _prev = json.loads(_prev_snaps[-1].read_text())
+                _sol_pos = [p for p in _prev.get("positions", []) if p.get("chainId") == "sol"]
+                if _sol_pos:
+                    # Convert snapshot format back to internal format
+                    for p in _sol_pos:
+                        p["_supSum"] = p.get("supSum", 0)
+                        p["_borSum"] = p.get("borSum", 0)
+                        p["_rewSum"] = p.get("rewSum", 0)
+                        p["_net"]    = p.get("net", 0)
+                        p["_poolId"] = p.get("poolId", "")
+                        p["_source"] = "jupiter-cached"
+                    positions = positions + _sol_pos
+                    sol_net_worth = sum(p["_net"] for p in _sol_pos)
+                    print(f"[refresh] Using {len(_sol_pos)} cached Solana positions (sol_net=${sol_net_worth:,.0f})")
+        except Exception as e2:
+            print(f"[refresh] Solana cache fallback failed: {e2}", file=sys.stderr)
 
     sup = sum(p["_supSum"] for p in positions)
     bor = sum(p["_borSum"] for p in positions)
