@@ -4,9 +4,9 @@
   "source": "Rabby API + Jupiter",
   "reportedTotal": 553255.9692622912,
   "totals": {
-    "sup": 3032289.1466099317,
+    "sup": 2932852.122398783,
     "bor": 2366786.465617472,
-    "net": 665502.6809924596,
+    "net": 566065.6567813109,
     "count": 15,
     "lowest_hr": 1.0375,
     "walletTokensTotal": 2559.2546696479453
@@ -278,50 +278,6 @@
       "rewSum": 0,
       "net": 21590.26506703667,
       "poolId": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending"
-    },
-    {
-      "protocol": "Morpho",
-      "chain": "Ethereum",
-      "chainId": "eth",
-      "type": "Yield",
-      "rabbyType": "Yield",
-      "healthRate": null,
-      "supplied": [
-        {
-          "token": "USDT",
-          "amount": 50801.531914,
-          "usd": 50784.767408468375
-        }
-      ],
-      "borrowed": [],
-      "description": "Steakhouse Prime Instant",
-      "supSum": 50784.767408468375,
-      "borSum": 0,
-      "rewSum": 0,
-      "net": 50784.767408468375,
-      "poolId": "0xbeef003c68896c7d2c3c60d363e8d71a49ab2bf9"
-    },
-    {
-      "protocol": "Morpho",
-      "chain": "Ethereum",
-      "chainId": "eth",
-      "type": "Yield",
-      "rabbyType": "Yield",
-      "healthRate": null,
-      "supplied": [
-        {
-          "token": "USDC",
-          "amount": 48647.391577,
-          "usd": 48652.25680268027
-        }
-      ],
-      "borrowed": [],
-      "description": "Steakhouse Reservoir USDC",
-      "supSum": 48652.25680268027,
-      "borSum": 0,
-      "rewSum": 0,
-      "net": 48652.25680268027,
-      "poolId": "0xbeeff047c03714965a54b671a37c18bef6b96210"
     },
     {
       "protocol": "Neutrl",
