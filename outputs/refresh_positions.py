@@ -1032,12 +1032,6 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   var rows=[];
   var totalEquity=eq;
 
-  function mRow(hist,lbl,kl,cur,kind,getH){
-    var now='<td class="now-cell'+(cur<0?' neg':'')+'">'+fmtUsd(cur)+'</td>';
-    var hc=L.map(function(h){var hh=hist&&hist[String(h)];if(!hh)return emptyCell();return hh.absent?newCell():histCell(cur,getH(hh),kind);}).join('');
-    return'<tr class="subrow '+kl+'"><td>'+lbl+'</td>'+now+hc+'</tr>';
-  }
-
   if(groupOrder.length){
     rows.push('<tr class="section-divider"><td colspan="'+COLSPAN+'">DeFi positions</td></tr>');
   }
