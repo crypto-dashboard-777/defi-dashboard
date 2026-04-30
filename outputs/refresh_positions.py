@@ -914,20 +914,53 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   function fmtPct(p){if(p==null)return'—';return(p>=0?'+':'')+p.toFixed(2)+'%';}
   function hrCls(h){return h==null?'gray':(h<1.05?'red':(h<1.15?'amber':'green'));}
 
-  // Historical cells show DELTA (now − then), coloured by direction.
-  // Flat within 0.005% of the current value → muted dash.
-  function histCell(cur,hist,kind){
-    if(hist==null)return'<td class="cell-empty">—</td>';
-    var diff=cur-hist,thr=Math.max(5,Math.abs(cur)*0.00005);
-    if(Math.abs(diff)<thr)return'<td class="cell-flat" title="'+fmtUsd(hist)+'">—</td>';
+  // ── Time-series cell colouring ───────────────────────────────────────────────
+  // Each cell shows its VALUE coloured relative to the NEXT-OLDER cell.
+  // The oldest populated cell is always flat (it's the baseline).
+  // The "Now" cell is coloured relative to the 12h cell (most recent history).
+  // Threshold: 0.005% of the value, minimum $5.
+  function thr(v){return Math.max(5,Math.abs(v)*0.00005);}
+  function dirCls(val,prevVal,kind){
+    if(prevVal==null)return'cell-flat';
+    var diff=val-prevVal;
+    if(Math.abs(diff)<thr(val))return'cell-flat';
     var up=kind==='liability'?(diff<0):(diff>0);
-    var cls=up?'cell-up':'cell-down';
-    var sign=diff>0?'+':'';
-    return'<td class="'+cls+'" title="was '+fmtUsd(hist)+'">'+sign+fmtUsd(diff,0)+'</td>';
+    return up?'cell-up':'cell-down';
   }
   function newCell(){return'<td class="cell-new">new</td>';}
   function emptyCell(){return'<td class="cell-empty">—</td>';}
   function hrHdrCls(hr){return hr==null?'hr-none':(hr<1.05?'hr-red':(hr<1.15?'hr-amber':'hr-green'));}
+
+  // Build a full data row with time-series coloring.
+  // hist = p.history dict, cur = current value, getH = fn(hh)->number
+  function mRow(hist,lbl,kl,cur,kind,getH){
+    // Collect historical values in L order (12h=index0 is most recent, 14d=last is oldest)
+    var hvals=L.map(function(h){
+      var hh=hist&&hist[String(h)];
+      if(!hh||hh.absent)return null;
+      return getH(hh);
+    });
+    // Find the rightmost (oldest) non-null index — it gets flat styling
+    var oldestIdx=-1;
+    for(var i=hvals.length-1;i>=0;i--){if(hvals[i]!=null){oldestIdx=i;break;}}
+
+    // Now cell: compare vs hvals[0] (12h), or flat if no history
+    var nowCls='now-cell'+(cur<0?' neg':'')+' '+dirCls(cur,hvals[0],kind);
+    var nowTd='<td class="'+nowCls.trim()+'">'+fmtUsd(cur)+'</td>';
+
+    // History cells: each compares to its immediate right neighbour (next older)
+    var hc=hvals.map(function(val,i){
+      var hh=hist&&hist[String(L[i])];
+      if(val==null){if(!hh)return emptyCell();return hh.absent?newCell():emptyCell();}
+      if(i===oldestIdx)return'<td class="cell-flat">'+fmtUsd(val)+'</td>';
+      // Find next older non-null
+      var prevVal=null;
+      for(var j=i+1;j<hvals.length;j++){if(hvals[j]!=null){prevVal=hvals[j];break;}}
+      return'<td class="'+dirCls(val,prevVal,kind)+'">'+fmtUsd(val)+'</td>';
+    }).join('');
+
+    return'<tr class="subrow '+kl+'"><td>'+lbl+'</td>'+nowTd+hc+'</tr>';
+  }
 
   // ── Header ──────────────────────────────────────────────────────────────────
   document.getElementById('wallet').textContent=D.wallet;
@@ -1054,20 +1087,37 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   if(sW.length){rows.push('<tr class="section-divider"><td colspan="'+COLSPAN+'">Wallet tokens</td></tr>');}
   sW.forEach(function(w){
     var amt=w.amount>=1?Math.round(w.amount).toLocaleString('en-US'):w.amount.toFixed(4);
-    var hc=L.map(function(h){var hh=w.history&&w.history[String(h)];if(!hh)return emptyCell();return hh.absent?newCell():histCell(w.usd,hh.usd,'asset');}).join('');
+    var wvals=L.map(function(h){var hh=w.history&&w.history[String(h)];return(hh&&!hh.absent)?hh.usd:null;});
+    var wOldest=-1;for(var i=wvals.length-1;i>=0;i--){if(wvals[i]!=null){wOldest=i;break;}}
+    var wNowCls='now-cell '+dirCls(w.usd,wvals[0],'asset');
+    var whc=wvals.map(function(val,i){
+      var hh=w.history&&w.history[String(L[i])];
+      if(val==null){if(!hh)return emptyCell();return hh.absent?newCell():emptyCell();}
+      if(i===wOldest)return'<td class="cell-flat">'+fmtUsd(val)+'</td>';
+      var pv=null;for(var j=i+1;j<wvals.length;j++){if(wvals[j]!=null){pv=wvals[j];break;}}
+      return'<td class="'+dirCls(val,pv,'asset')+'">'+fmtUsd(val)+'</td>';
+    }).join('');
     rows.push('<tr class="wallet-row"><td><span class="tok-name">'+w.token+'</span>'+
       '<span class="tok-chain">'+w.chain+'</span><span class="tok-qty">'+amt+'</span></td>'+
-      '<td class="now-cell">'+fmtUsd(w.usd)+'</td>'+hc+'</tr>');
+      '<td class="'+wNowCls.trim()+'">'+fmtUsd(w.usd)+'</td>'+whc+'</tr>');
   });
 
-  // Totals
-  var tc=L.map(function(h){
+  // Totals row — time-series coloring same logic
+  var tvals=L.map(function(h){
     var s=0,any=false;
     D.positions.forEach(function(p){var hh=p.history&&p.history[String(h)];if(hh&&!hh.absent&&hh.net!=null){s+=hh.net;any=true;}});
     sW.forEach(function(w){var hh=w.history&&w.history[String(h)];if(hh&&!hh.absent&&hh.usd!=null){s+=hh.usd;any=true;}});
-    return any?histCell(totalEquity,s,'asset'):emptyCell();
+    return any?s:null;
+  });
+  var tOldest=-1;for(var ti=tvals.length-1;ti>=0;ti--){if(tvals[ti]!=null){tOldest=ti;break;}}
+  var tNowCls='now-cell '+dirCls(totalEquity,tvals[0],'asset');
+  var tc=tvals.map(function(val,i){
+    if(val==null)return emptyCell();
+    if(i===tOldest)return'<td class="cell-flat">'+fmtUsd(val)+'</td>';
+    var pv=null;for(var j=i+1;j<tvals.length;j++){if(tvals[j]!=null){pv=tvals[j];break;}}
+    return'<td class="'+dirCls(val,pv,'asset')+'">'+fmtUsd(val)+'</td>';
   }).join('');
-  rows.push('<tr class="totals-row"><td>Total equity</td><td class="now-cell">'+fmtUsd(totalEquity)+'</td>'+tc+'</tr>');
+  rows.push('<tr class="totals-row"><td>Total equity</td><td class="'+tNowCls.trim()+'">'+fmtUsd(totalEquity)+'</td>'+tc+'</tr>');
   document.getElementById('tbody').innerHTML=rows.join('');
 
   // Closed positions
