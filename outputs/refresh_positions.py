@@ -574,18 +574,29 @@ def build_history(current: dict, snapshots: list[dict]):
     benchmarks = compute_benchmarks(current, snapshots)
 
     # Day 0 baseline — permanent file written once
+    # Use net_pos (t.net + walletTokensTotal) for a consistent apples-to-apples comparison
     day0_info = None
     day0_path = Path(__file__).parent.parent / "outputs/snapshots/day0.json"
     if day0_path.exists():
         try:
             d0 = json.loads(day0_path.read_text())
-            d0_eq = d0.get("reportedTotal") or 0
-            cur_eq = current.get("reportedTotal") or 0
+            d0_t   = d0.get("totals") or {}
+            d0_net_pos = (d0_t.get("net") or 0) + (d0_t.get("walletTokensTotal") or 0)
+            # Fall back to reportedTotal if totals not present
+            if d0_net_pos == 0:
+                d0_net_pos = d0.get("reportedTotal") or 0
+            cur_t  = current.get("totals") or {}
+            cur_net_pos = (cur_t.get("net") or 0) + (cur_t.get("walletTokensTotal") or 0)
+            if cur_net_pos == 0:
+                cur_net_pos = current.get("reportedTotal") or 0
+            delta = cur_net_pos - d0_net_pos
+            pct   = round(delta / d0_net_pos * 100, 2) if d0_net_pos else 0
             day0_info = {
-                "equity":  round(d0_eq, 2),
+                "net_pos": round(d0_net_pos, 2),
+                "equity":  round(d0_net_pos, 2),   # kept for compat
                 "at":      d0.get("capturedAt"),
-                "delta":   round(cur_eq - d0_eq, 2),
-                "pct":     round((cur_eq - d0_eq) / d0_eq * 100, 2) if d0_eq else 0,
+                "delta":   round(delta, 2),
+                "pct":     pct,
             }
         except Exception:
             pass
@@ -890,6 +901,59 @@ EXTRA_CSS = """
 .proto-pair{font-size:9px;color:var(--muted-2);margin-left:8px;
   font-family:ui-monospace,Menlo,monospace}
 .hr-pill{margin-left:9px;vertical-align:1px}
+
+/* ── Fund hero ── */
+.fund-hero{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:24px;flex-wrap:wrap;
+  background:linear-gradient(135deg,rgba(129,140,248,.06) 0%,rgba(45,212,160,.03) 100%);
+  border:1px solid rgba(129,140,248,.2);
+  border-radius:var(--radius);padding:28px 32px 24px;margin-bottom:24px}
+.fund-hero-left{display:flex;flex-direction:column;gap:6px;min-width:200px}
+.fund-badge{display:flex;align-items:center;gap:6px;font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.12em;color:var(--muted-2);margin-bottom:2px}
+.fund-name{font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--muted);
+  text-transform:uppercase}
+.fund-balance{font-size:48px;font-weight:900;letter-spacing:-.06em;
+  font-variant-numeric:tabular-nums;color:var(--text);line-height:1;margin:-2px 0 4px}
+.fund-meta{font-size:9.5px;color:var(--muted-2);font-family:ui-monospace,Menlo,monospace;
+  letter-spacing:.02em}
+
+/* ── Performance pills ── */
+.fund-hero-right{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;
+  padding-top:4px}
+.perf-pill{background:var(--surface-2);border:1px solid var(--border-2);
+  border-radius:10px;padding:11px 15px;min-width:100px;
+  transition:border-color .15s,transform .1s}
+.perf-pill:hover{transform:translateY(-1px);border-color:var(--border-2)}
+.perf-pill.perf-up{border-color:rgba(45,212,160,.25);background:rgba(45,212,160,.05)}
+.perf-pill.perf-dn{border-color:rgba(244,112,112,.22);background:rgba(244,112,112,.04)}
+.perf-pill.perf-flat{border-color:var(--border)}
+.perf-pill.perf-na{border-color:var(--border);opacity:.5}
+.perf-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;
+  color:var(--muted-2);margin-bottom:5px}
+.perf-val{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;
+  letter-spacing:-.03em;line-height:1}
+.perf-pill.perf-up .perf-val{color:var(--green)}
+.perf-pill.perf-dn .perf-val{color:var(--red)}
+.perf-pill.perf-flat .perf-val,.perf-pill.perf-na .perf-val{color:var(--muted-2)}
+.perf-pct{font-size:10.5px;font-weight:700;margin-top:3px}
+.perf-pill.perf-up .perf-pct{color:var(--green);opacity:.8}
+.perf-pill.perf-dn .perf-pct{color:var(--red);opacity:.8}
+.perf-pill.perf-flat .perf-pct{color:var(--muted-2)}
+
+/* ── Leverage detail cards ── */
+.lev-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.lev-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 18px}
+.lev-collat{border-left:3px solid var(--supply)}
+.lev-debt{border-left:3px solid var(--borrow)}
+.lev-net2{border-left:3px solid var(--indigo)}
+.lev-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;
+  color:var(--muted-2);margin-bottom:5px}
+.lev-val{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;
+  letter-spacing:-.04em;color:var(--text)}
+.lev-val-debt{color:var(--borrow)!important}
 """
 
 
@@ -918,8 +982,8 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   // Each cell shows its VALUE coloured relative to the NEXT-OLDER cell.
   // The oldest populated cell is always flat (it's the baseline).
   // The "Now" cell is coloured relative to the 12h cell (most recent history).
-  // Threshold: 0.005% of the value, minimum $5.
-  function thr(v){return Math.max(5,Math.abs(v)*0.00005);}
+  // Threshold: 0.1% of the value, minimum $50. Suppresses noise on small moves.
+  function thr(v){return Math.max(50,Math.abs(v)*0.001);}
   function dirCls(val,prevVal,kind){
     if(prevVal==null)return'cell-flat';
     var diff=val-prevVal;
@@ -962,51 +1026,51 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
     return'<tr class="subrow '+kl+'"><td>'+lbl+'</td>'+nowTd+hc+'</tr>';
   }
 
-  // ── Header ──────────────────────────────────────────────────────────────────
-  document.getElementById('wallet').textContent=D.wallet;
-  document.getElementById('captured').textContent='Snapshot '+D.capturedAt+' UTC';
-  document.getElementById('source').textContent=D.source;
-  document.getElementById('history-note').textContent=D.snapshotCount<=1
-    ?'Day 0 — lookback colours appear from the next snapshot'
-    :D.snapshotCount+' snapshots since '+D.earliestSnapshotAt+' UTC';
-
-  // ── Summary cards ────────────────────────────────────────────────────────────
+  // ── Fund hero ────────────────────────────────────────────────────────────────
   var t=D.totals,wt=t.walletTokensTotal||0,eq=D.reportedTotal||(t.net+wt);
   var netPos=(t.net||0)+(wt||0);
-  document.getElementById('summary').innerHTML=
-    '<div class="cell cell-net summary-net"><div class="label">Net&ensp;<span style="font-size:10px;font-weight:500;color:var(--muted-2);letter-spacing:.02em">collateral − debt + wallet</span></div><div class="value">'+fmtUsd(netPos)+'</div></div>'+
-    '<div class="cell cell-collat"><div class="label">Collateral</div><div class="value">'+fmtUsd(t.sup)+'</div></div>'+
-    '<div class="cell cell-debt"><div class="label">Debt</div><div class="value cell-val-debt">'+fmtUsd(t.bor)+'</div></div>';
 
-  // ── Benchmark strip ──────────────────────────────────────────────────────────
-  function benchCard(label,delta,pct,baseEquity,extraCls){
-    var dcls,pcls,sign='';
-    if(delta==null){
-      return'<div class="bench-card'+(extraCls?' '+extraCls:'')+'">'+
-        '<div class="bench-lbl">'+label+'</div>'+
-        '<div class="bench-na">no data</div></div>';
-    }
-    if(Math.abs(pct)<0.005){dcls='bench-delta-flat';pcls='bench-pct-flat';sign='';}
-    else if(delta>=0){dcls='bench-delta-up';pcls='bench-pct-up';sign='+';}
-    else{dcls='bench-delta-dn';pcls='bench-pct-dn';}
-    var absDelta=fmtUsd(Math.abs(delta));
-    var signedDelta=(delta<0?'-':sign)+absDelta;
-    var pctStr=(delta>=0?'+':'')+pct.toFixed(2)+'%';
-    return'<div class="bench-card'+(extraCls?' '+extraCls:'')+'">'+
-      '<div class="bench-lbl">'+label+'</div>'+
-      '<div class="'+dcls+'">'+signedDelta+'</div>'+
-      '<div class="'+pcls+'">'+pctStr+'</div>'+
-      (baseEquity!=null?'<div class="bench-base">from '+fmtUsd(baseEquity)+'</div>':'')+
+  var balEl=document.getElementById('fund-balance');
+  if(balEl)balEl.textContent=fmtUsd(netPos);
+  var metaEl=document.getElementById('fund-meta');
+  if(metaEl)metaEl.textContent='as of '+D.capturedAt+' UTC  \u00b7  '+D.wallet.slice(0,6)+'\u2026'+D.wallet.slice(-4);
+  var hnEl=document.getElementById('history-note');
+  if(hnEl)hnEl.textContent=D.snapshotCount+' snapshots \u00b7 Day 0: '+((D.day0&&D.day0.at)||'\u2014');
+
+  // Performance pills: Day 0 + benchmark periods
+  function perfPill(label,delta,pct){
+    if(delta==null)return'<div class="perf-pill perf-na"><div class="perf-lbl">'+label+'</div><div class="perf-val">no data</div></div>';
+    var flat=pct!=null&&Math.abs(pct)<0.1;
+    var up=delta>=0;
+    var cls=flat?'perf-flat':(up?'perf-up':'perf-dn');
+    var sign=(up&&!flat)?'+':'';
+    return'<div class="perf-pill '+cls+'">'+
+      '<div class="perf-lbl">'+label+'</div>'+
+      '<div class="perf-val">'+(flat?'\u2014':sign+fmtUsd(Math.abs(delta),0))+'</div>'+
+      '<div class="perf-pct">'+(flat?'flat':((up?'+':'')+pct.toFixed(2)+'%'))+'</div>'+
       '</div>';
   }
-  var bh='';
-  if(D.day0){
-    bh+=benchCard('Since Day 0',D.day0.delta,D.day0.pct,D.day0.equity,'bench-card-day0');
+  var ph='';
+  if(D.day0&&D.day0.delta!=null)ph+=perfPill('Since day 0',D.day0.delta,D.day0.pct);
+  (D.benchmarks||[]).forEach(function(b){ph+=perfPill(b.label,b.delta,b.pct);});
+  var perfEl=document.getElementById('fund-perf');
+  if(perfEl)perfEl.innerHTML=ph;
+
+  // ── Leverage detail (bottom of page) ─────────────────────────────────────────
+  var levEl=document.getElementById('leverage-section');
+  if(levEl){
+    levEl.innerHTML=
+      '<div class="section-row" style="margin-top:32px">'+
+        '<div class="section-title">Leverage detail</div>'+
+        '<div class="legend" style="font-size:9px">Gross collateral &amp; debt across all positions</div>'+
+      '</div>'+
+      '<div class="lev-cards">'+
+        '<div class="lev-card lev-collat"><div class="lev-lbl">Total collateral</div><div class="lev-val">'+fmtUsd(t.sup)+'</div></div>'+
+        '<div class="lev-card lev-debt"><div class="lev-lbl">Total debt</div><div class="lev-val lev-val-debt">'+fmtUsd(t.bor)+'</div></div>'+
+        '<div class="lev-card lev-net2"><div class="lev-lbl">DeFi net</div><div class="lev-val">'+fmtUsd(t.net)+'</div></div>'+
+      '</div>';
   }
-  (D.benchmarks||[]).forEach(function(b){
-    bh+=benchCard('vs '+b.label,b.delta,b.pct,b.equity);
-  });
-  document.getElementById('benchmarks').innerHTML=bh;
+
 
   // ── Token-first grouped table ────────────────────────────────────────────────
   var COLSPAN=2+L.length;
@@ -1146,48 +1210,44 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>DeFi Positions</title>
+<title>Fund Dashboard</title>
 <style>{DASHBOARD_CSS}{EXTRA_CSS}</style>
 </head>
 <body>
 <nav class="page-nav">
-  <a href="index.html" class="active">Positions</a>
+  <a href="index.html" class="active">Overview</a>
   <a href="history.html">History</a>
 </nav>
-<header class="page">
-  <div class="hdr-left">
-    <div class="hdr-title"><span class="live-dot"></span><h1>DeFi Positions</h1></div>
-    <div class="wallet" id="wallet"></div>
-  </div>
-  <div class="hdr-right">
-    <div class="snap-time" id="captured"></div>
-    <div class="source" id="source"></div>
-    <div class="hist" id="history-note"></div>
-    <div class="live-line" id="live-line">Fetching live total&hellip;</div>
-  </div>
-</header>
 
-<div class="summary" id="summary"></div>
-
-<div class="section-row" style="margin-top:12px;margin-bottom:6px">
-  <div class="section-title">Performance vs baseline</div>
+<!-- ── Fund hero ─────────────────────────────────────────────────── -->
+<div class="fund-hero">
+  <div class="fund-hero-left">
+    <div class="fund-badge"><span class="live-dot"></span>Live</div>
+    <div class="fund-name">Portfolio</div>
+    <div class="fund-balance" id="fund-balance">—</div>
+    <div class="fund-meta" id="fund-meta"></div>
+  </div>
+  <div class="fund-hero-right" id="fund-perf"></div>
 </div>
-<div class="bench-strip" id="benchmarks"></div>
 
-<div class="section-row">
-  <div class="section-title">All holdings</div>
+<!-- ── Holdings table ────────────────────────────────────────────── -->
+<div class="section-row" style="margin-top:20px">
+  <div class="section-title">Holdings</div>
   <div class="legend">
-    <span><span class="swatch" style="background:#2dd4a0"></span>In your favour</span>
-    <span><span class="swatch" style="background:#f47070"></span>Against you</span>
-    <span>Threshold&nbsp;0.005% &middot; positions grouped by token</span>
+    <span><span class="swatch" style="background:#2dd4a0"></span>Up vs prior period</span>
+    <span><span class="swatch" style="background:#f47070"></span>Down vs prior period</span>
   </div>
 </div>
 <table class="tbl">
-  <thead><tr><th>Token / Position</th><th class="now-hdr">Now</th>{lh_hdrs}</tr></thead>
+  <thead><tr><th>Token / Position</th><th class="now-hdr">Balance</th>{lh_hdrs}</tr></thead>
   <tbody id="tbody"></tbody>
 </table>
 <div id="closed"></div>
-<div class="footnote">Generated {generated_at} UTC &middot; Refreshes every 12h &middot; Positions over $50</div>
+
+<!-- ── Leverage detail (bottom) ─────────────────────────────────── -->
+<div class="leverage-section" id="leverage-section"></div>
+
+<div class="footnote">Updated {generated_at} UTC &middot; Auto-refreshes every 12h &middot; Positions &gt;$50 &middot; <span id="history-note"></span></div>
 <script id="payload" type="application/json">{payload_safe}</script>
 <script>{js}</script>
 </body></html>"""
