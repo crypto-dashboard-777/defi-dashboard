@@ -930,10 +930,35 @@ EXTRA_CSS = """
   font-variant-numeric:tabular-nums;color:var(--text);line-height:1;margin:-2px 0 4px}
 .fund-meta{font-size:9.5px;color:var(--muted-2);font-family:ui-monospace,Menlo,monospace;
   letter-spacing:.02em}
+.fund-brand{display:flex;align-items:center;gap:14px;margin-bottom:4px}
+.tulip-logo{height:56px;width:auto;flex-shrink:0;filter:drop-shadow(0 0 12px rgba(192,132,252,.35))}
+
+/* ── Day 0 stats card ── */
+.day0-card{
+  background:linear-gradient(135deg,rgba(192,132,252,.1) 0%,rgba(45,212,160,.06) 100%);
+  border:1px solid rgba(192,132,252,.25);border-radius:12px;
+  padding:16px 20px;min-width:200px;max-width:300px}
+.day0-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  margin-bottom:6px}
+.day0-row:last-child{margin-bottom:0}
+.day0-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;
+  color:var(--muted-2);white-space:nowrap}
+.day0-val{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;color:var(--text);text-align:right}
+.day0-val.val-up{color:var(--green)}
+.day0-val.val-dn{color:var(--red)}
+.day0-val.val-muted{color:var(--muted);font-size:11px;font-weight:600}
+.day0-divider{border:none;border-top:1px solid rgba(255,255,255,.07);margin:10px 0}
+.ann-return{font-size:22px;font-weight:900;letter-spacing:-.04em;line-height:1}
+.ann-return.val-up{color:var(--green)}
+.ann-return.val-dn{color:var(--red)}
+.ann-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;
+  color:var(--muted-2);margin-top:3px}
 
 /* ── Performance pills ── */
-.fund-hero-right{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;
-  padding-top:4px}
+.perf-pills-wrap{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;margin-top:4px}
+.fund-hero-right{display:flex;flex-direction:column;gap:10px;align-items:flex-start;
+  padding-top:4px;min-width:220px}
 .perf-pill{background:var(--surface-2);border:1px solid var(--border-2);
   border-radius:10px;padding:11px 15px;min-width:100px;
   transition:border-color .15s,transform .1s}
@@ -1049,6 +1074,56 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   var hnEl=document.getElementById('history-note');
   if(hnEl)hnEl.textContent=D.snapshotCount+' snapshots \u00b7 Day 0: '+((D.day0&&D.day0.at)||'\u2014');
 
+  // ── Day 0 stats card ─────────────────────────────────────────────────────────
+  var d0El=document.getElementById('day0-card');
+  if(d0El&&D.day0){
+    var d0=D.day0;
+    // Format Day 0 date nicely
+    var d0Date='—';
+    if(d0.at){
+      try{
+        var dt=new Date(d0.at.replace('T',' ').replace('Z',' UTC'));
+        d0Date=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});
+      }catch(e){d0Date=d0.at;}
+    }
+    // Annualized return
+    var annHtml='<span class="day0-val val-muted">calculating…</span>';
+    if(d0.at&&d0.pct!=null){
+      try{
+        var d0ts=new Date(d0.at.replace('T',' ').replace('Z',' UTC')).getTime();
+        var nowts=new Date(D.capturedAt.replace('T',' ').replace('Z',' UTC')).getTime();
+        var daysElapsed=(nowts-d0ts)/(1000*60*60*24);
+        if(daysElapsed>=0.5){
+          var totalReturn=d0.pct/100;
+          var ann=(Math.pow(1+totalReturn,365/daysElapsed)-1)*100;
+          var annCls=ann>=0?'ann-return val-up':'ann-return val-dn';
+          annHtml='<span class="'+annCls+'">'+(ann>=0?'+':'')+ann.toFixed(1)+'%</span>'+'<div class="ann-lbl">annualized</div>';
+        }
+      }catch(e){}
+    }
+    var pnlAmt=d0.delta!=null?d0.delta:null;
+    var pnlCls=pnlAmt!=null?(pnlAmt>=0?'day0-val val-up':'day0-val val-dn'):'day0-val';
+    var pnlStr=pnlAmt!=null?((pnlAmt>=0?'+':'-')+fmtUsd(Math.abs(pnlAmt),0)):'—';
+    // Use sign of delta (not rounded pct) so -$4 / 0.00% shows as "-0.00%" not "+0.00%"
+    var pctSign=pnlAmt!=null?(pnlAmt>=0?'+':'-'):'+';
+    var pctStr=d0.pct!=null?(pctSign+Math.abs(d0.pct).toFixed(2)+'%'):'';
+    d0El.innerHTML=
+      '<div class="day0-row">'+
+        '<span class="day0-lbl">Day 0</span>'+
+        '<span class="day0-val val-muted">'+d0Date+'</span>'+
+      '</div>'+
+      '<div class="day0-row">'+
+        '<span class="day0-lbl">Starting capital</span>'+
+        '<span class="day0-val">'+fmtUsd(d0.net_pos,0)+'</span>'+
+      '</div>'+
+      '<hr class="day0-divider">'+
+      '<div class="day0-row">'+
+        '<span class="day0-lbl">P&amp;L</span>'+
+        '<span class="'+pnlCls+'">'+pnlStr+(pctStr?' <small style="font-size:10px;opacity:.75">'+pctStr+'</small>':'')+'</span>'+
+      '</div>'+
+      '<div style="margin-top:10px;text-align:center">'+annHtml+'</div>';
+  }
+
   // Performance pills: Day 0 + benchmark periods
   function perfPill(label,delta,pct){
     if(delta==null)return'<div class="perf-pill perf-na"><div class="perf-lbl">'+label+'</div><div class="perf-val">no data</div></div>';
@@ -1064,11 +1139,13 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
       '<div class="perf-pct">'+dispPct+'</div>'+
       '</div>';
   }
+  // Only show benchmark pills that have real data (skip "no data" pills — day0 is in the card)
   var ph='';
-  if(D.day0&&D.day0.delta!=null)ph+=perfPill('Since day 0',D.day0.delta,D.day0.pct);
-  (D.benchmarks||[]).forEach(function(b){ph+=perfPill(b.label,b.delta,b.pct);});
+  (D.benchmarks||[]).forEach(function(b){
+    if(b.delta!=null)ph+=perfPill(b.label,b.delta,b.pct);
+  });
   var perfEl=document.getElementById('fund-perf');
-  if(perfEl)perfEl.innerHTML=ph;
+  if(perfEl)perfEl.innerHTML=ph||'<div style="font-size:9px;color:var(--muted-2);padding:4px 0">Benchmark data will appear after the first week</div>';
 
   // ── Leverage detail (bottom of page) ─────────────────────────────────────────
   var levEl=document.getElementById('leverage-section');
@@ -1236,12 +1313,37 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
 <!-- ── Fund hero ─────────────────────────────────────────────────── -->
 <div class="fund-hero">
   <div class="fund-hero-left">
-    <div class="fund-badge"><span class="live-dot"></span>Live</div>
-    <div class="fund-name">Portfolio</div>
+    <div class="fund-brand">
+      <svg class="tulip-logo" viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- stem -->
+        <path d="M32 78 Q32 52 32 40" stroke="#2dd4a0" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- leaf left -->
+        <path d="M32 58 Q20 50 18 40 Q26 44 32 54" fill="#2dd4a0" opacity=".7"/>
+        <!-- leaf right -->
+        <path d="M32 52 Q44 44 46 34 Q38 38 32 48" fill="#2dd4a0" opacity=".5"/>
+        <!-- petal left outer -->
+        <path d="M32 38 Q14 32 12 16 Q22 20 32 36" fill="#c084fc"/>
+        <!-- petal right outer -->
+        <path d="M32 38 Q50 32 52 16 Q42 20 32 36" fill="#a855f7"/>
+        <!-- petal center -->
+        <path d="M32 40 Q24 22 32 8 Q40 22 32 40" fill="#e879f9"/>
+        <!-- petal left inner -->
+        <path d="M32 38 Q18 28 20 12 Q28 18 32 36" fill="#d946ef" opacity=".8"/>
+        <!-- petal right inner -->
+        <path d="M32 38 Q46 28 44 12 Q36 18 32 36" fill="#c026d3" opacity=".8"/>
+      </svg>
+      <div>
+        <div class="fund-badge"><span class="live-dot"></span>Live</div>
+        <div class="fund-name">Tulip Fund</div>
+      </div>
+    </div>
     <div class="fund-balance" id="fund-balance">—</div>
     <div class="fund-meta" id="fund-meta"></div>
   </div>
-  <div class="fund-hero-right" id="fund-perf"></div>
+  <div class="fund-hero-right">
+    <div class="day0-card" id="day0-card"></div>
+    <div class="perf-pills-wrap" id="fund-perf"></div>
+  </div>
 </div>
 
 <!-- ── Holdings table ────────────────────────────────────────────── -->

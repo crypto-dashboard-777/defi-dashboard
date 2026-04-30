@@ -266,10 +266,35 @@ h1{font-size:18px;font-weight:800;letter-spacing:-.04em;color:var(--text)}
   font-variant-numeric:tabular-nums;color:var(--text);line-height:1;margin:-2px 0 4px}
 .fund-meta{font-size:9.5px;color:var(--muted-2);font-family:ui-monospace,Menlo,monospace;
   letter-spacing:.02em}
+.fund-brand{display:flex;align-items:center;gap:14px;margin-bottom:4px}
+.tulip-logo{height:56px;width:auto;flex-shrink:0;filter:drop-shadow(0 0 12px rgba(192,132,252,.35))}
+
+/* ── Day 0 stats card ── */
+.day0-card{
+  background:linear-gradient(135deg,rgba(192,132,252,.1) 0%,rgba(45,212,160,.06) 100%);
+  border:1px solid rgba(192,132,252,.25);border-radius:12px;
+  padding:16px 20px;min-width:200px;max-width:300px}
+.day0-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  margin-bottom:6px}
+.day0-row:last-child{margin-bottom:0}
+.day0-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;
+  color:var(--muted-2);white-space:nowrap}
+.day0-val{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;color:var(--text);text-align:right}
+.day0-val.val-up{color:var(--green)}
+.day0-val.val-dn{color:var(--red)}
+.day0-val.val-muted{color:var(--muted);font-size:11px;font-weight:600}
+.day0-divider{border:none;border-top:1px solid rgba(255,255,255,.07);margin:10px 0}
+.ann-return{font-size:22px;font-weight:900;letter-spacing:-.04em;line-height:1}
+.ann-return.val-up{color:var(--green)}
+.ann-return.val-dn{color:var(--red)}
+.ann-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;
+  color:var(--muted-2);margin-top:3px}
 
 /* ── Performance pills ── */
-.fund-hero-right{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;
-  padding-top:4px}
+.perf-pills-wrap{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;margin-top:4px}
+.fund-hero-right{display:flex;flex-direction:column;gap:10px;align-items:flex-start;
+  padding-top:4px;min-width:220px}
 .perf-pill{background:var(--surface-2);border:1px solid var(--border-2);
   border-radius:10px;padding:11px 15px;min-width:100px;
   transition:border-color .15s,transform .1s}
@@ -313,12 +338,37 @@ h1{font-size:18px;font-weight:800;letter-spacing:-.04em;color:var(--text)}
 <!-- ── Fund hero ─────────────────────────────────────────────────── -->
 <div class="fund-hero">
   <div class="fund-hero-left">
-    <div class="fund-badge"><span class="live-dot"></span>Live</div>
-    <div class="fund-name">Portfolio</div>
+    <div class="fund-brand">
+      <svg class="tulip-logo" viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- stem -->
+        <path d="M32 78 Q32 52 32 40" stroke="#2dd4a0" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- leaf left -->
+        <path d="M32 58 Q20 50 18 40 Q26 44 32 54" fill="#2dd4a0" opacity=".7"/>
+        <!-- leaf right -->
+        <path d="M32 52 Q44 44 46 34 Q38 38 32 48" fill="#2dd4a0" opacity=".5"/>
+        <!-- petal left outer -->
+        <path d="M32 38 Q14 32 12 16 Q22 20 32 36" fill="#c084fc"/>
+        <!-- petal right outer -->
+        <path d="M32 38 Q50 32 52 16 Q42 20 32 36" fill="#a855f7"/>
+        <!-- petal center -->
+        <path d="M32 40 Q24 22 32 8 Q40 22 32 40" fill="#e879f9"/>
+        <!-- petal left inner -->
+        <path d="M32 38 Q18 28 20 12 Q28 18 32 36" fill="#d946ef" opacity=".8"/>
+        <!-- petal right inner -->
+        <path d="M32 38 Q46 28 44 12 Q36 18 32 36" fill="#c026d3" opacity=".8"/>
+      </svg>
+      <div>
+        <div class="fund-badge"><span class="live-dot"></span>Live</div>
+        <div class="fund-name">Tulip Fund</div>
+      </div>
+    </div>
     <div class="fund-balance" id="fund-balance">—</div>
     <div class="fund-meta" id="fund-meta"></div>
   </div>
-  <div class="fund-hero-right" id="fund-perf"></div>
+  <div class="fund-hero-right">
+    <div class="day0-card" id="day0-card"></div>
+    <div class="perf-pills-wrap" id="fund-perf"></div>
+  </div>
 </div>
 
 <!-- ── Holdings table ────────────────────────────────────────────── -->
@@ -338,8 +388,8 @@ h1{font-size:18px;font-weight:800;letter-spacing:-.04em;color:var(--text)}
 <!-- ── Leverage detail (bottom) ─────────────────────────────────── -->
 <div class="leverage-section" id="leverage-section"></div>
 
-<div class="footnote">Updated 2026-04-30 14:32:40 UTC &middot; Auto-refreshes every 6h &middot; Positions &gt;$50 &middot; <span id="history-note"></span></div>
-<script id="payload" type="application/json">{"wallet":"0xe16be042f9433779909a972669be3a2003956348","capturedAt":"2026-04-30 14:32:33","source":"Rabby API + Jupiter","reportedTotal":630376.3852701036,"totals":{"sup":2933839.583641257,"bor":2303536.243631392,"net":630303.3400098654,"count":16,"lowest_hr":1.0374,"walletTokensTotal":0},"positions":[{"protocol":"Aave V3","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0503,"supplied":[{"token":"USDT","amount":50811.72285,"usd":50805.1173260295}],"borrowed":[{"token":"USDC","amount":37728.428219,"usd":37735.975414082815}],"description":"","supSum":50805.1173260295,"borSum":37735.975414082815,"rewSum":0,"net":13069.141911946688,"poolId":"0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Fluid","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0481,"supplied":[{"token":"reUSD","amount":131159.65291263416,"usd":140952.81862420443}],"borrowed":[{"token":"USDT","amount":121054.233105,"usd":121038.49605469636}],"description":"","supSum":140952.81862420443,"borSum":121038.49605469636,"rewSum":0,"net":19914.322569508076,"poolId":"0x324c5dc1fc42c7a4d43d92df1eba58a54d13bf2d","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Curve LlamaLend","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0452,"supplied":[{"token":"sfrxUSD","amount":275773.43553,"usd":328750.57734067197}],"borrowed":[{"token":"crvUSD","amount":306407.5960615563,"usd":306499.93590300257}],"description":"","supSum":328750.57734067197,"borSum":306499.93590300257,"rewSum":0,"net":22250.6414376694,"poolId":"0x3de37c38739dfb83b7a902842bf5393040f7bf50","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Curve LlamaLend","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0374,"supplied":[{"token":"sUSDe","amount":314125.85536718956,"usd":386078.6724737359}],"borrowed":[{"token":"crvUSD","amount":349641.2670757982,"usd":349746.6359360348}],"description":"","supSum":386078.6724737359,"borSum":349746.6359360348,"rewSum":0,"net":36332.03653770109,"poolId":"0xb536fea3a01c95dd09932440ec802a75410139d6","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Aave V3","chain":"Mantle","chainId":"mnt","type":"Lending","rabbyType":"Lending","healthRate":1.0541,"supplied":[{"token":"WMNT","amount":39.895129146671614,"usd":24.91813860884877},{"token":"syrupUSDT","amount":69284.08324,"usd":77724.90464154922},{"token":"GHO","amount":36.78842980847622,"usd":36.765238852385366}],"borrowed":[{"token":"USDT0","amount":68037.065421,"usd":68013.93281875686},{"token":"USDC","amount":0.077568,"usd":0.07758351670334067}],"description":"","supSum":77786.58801901045,"borSum":68014.01040227356,"rewSum":0,"net":9772.57761673689,"poolId":"0x458f293454fe0d67ec0655f3672301301dd51422","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.1283,"supplied":[{"token":"PT-apyUSD-18JUN2026","amount":201006.01797795203,"usd":197054.66372240084}],"borrowed":[{"token":"USDC","amount":150269.61938924584,"usd":150299.67932511086}],"description":"","supSum":197054.66372240084,"borSum":150299.67932511086,"rewSum":0,"net":46754.98439728998,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.3192,"supplied":[{"token":"PT-srNUSD-28MAY2026","amount":187379.23790052457,"usd":186156.30435867156}],"borrowed":[{"token":"USDC","amount":129169.6456022248,"usd":129195.48469916463}],"description":"","supSum":186156.30435867156,"borSum":129195.48469916463,"rewSum":0,"net":56960.81965950693,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0654,"supplied":[{"token":"siUSD","amount":307229.9414950857,"usd":327710.9501445745}],"borrowed":[{"token":"msUSD","amount":281371.462130582,"usd":280231.4404390584}],"description":"","supSum":327710.9501445745,"borSum":280231.4404390584,"rewSum":0,"net":47479.5097055161,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.5278,"supplied":[{"token":"mF-ONE","amount":148000.0,"usd":160084.55978391354}],"borrowed":[{"token":"USDC","amount":88458.05630492957,"usd":88475.75145522061}],"description":"","supSum":160084.55978391354,"borSum":88475.75145522061,"rewSum":0,"net":71608.80832869293,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0572,"supplied":[{"token":"sUSDe","amount":130322.31737401568,"usd":160173.5942004735}],"borrowed":[{"token":"PYUSD","amount":138536.86173821674,"usd":138536.86173821674}],"description":"","supSum":160173.5942004735,"borSum":138536.86173821674,"rewSum":0,"net":21636.73246225677,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Neutrl","chain":"Ethereum","chainId":"eth","type":"Yield","rabbyType":"Locked","healthRate":null,"supplied":[{"token":"NUSD","amount":95933.36997206042,"usd":95845.62458251606}],"borrowed":[],"description":"","supSum":95845.62458251606,"borSum":0,"rewSum":0,"net":95845.62458251606,"poolId":"0x08efcc2f3e61185d0ea7f8830b3fec9bfa2ee313:pending","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Pendle V2","chain":"Ethereum","chainId":"eth","type":"Yield","rabbyType":"Deposit","healthRate":null,"supplied":[{"token":"PT-reUSDe-25JUN2026","amount":35130.270946397795,"usd":34358.485120551326}],"borrowed":[],"description":"","supSum":34358.485120551326,"borSum":0,"rewSum":0,"net":34358.485120551326,"poolId":"0xdc9a5a2e3ce7ac881fc3b28c629c05d1617d1c56","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Fluid","chain":"Plasma","chainId":"plasma","type":"Lending","rabbyType":"Lending","healthRate":1.0432,"supplied":[{"token":"sUSDai","amount":249570.01805346226,"usd":270082.1998776371}],"borrowed":[{"token":"USDT0","amount":233084.377852,"usd":233005.12916353034}],"description":"","supSum":270082.1998776371,"borSum":233005.12916353034,"rewSum":0,"net":37077.070714106754,"poolId":"0x324c5dc1fc42c7a4d43d92df1eba58a54d13bf2d","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Yuzu Money","chain":"Plasma","chainId":"plasma","type":"Yield","rabbyType":"Yield","healthRate":null,"supplied":[{"token":"USDT0","amount":15521.324726323905,"usd":15516.047475916954}],"borrowed":[],"description":"Yuzu Protection Pool Cooldown #26","supSum":15516.047475916954,"borSum":0,"rewSum":0,"net":15516.047475916954,"poolId":"0xebfc8c2fe73c431ef2a371aea9132110aab50dca","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Loopscale","chain":"Solana","chainId":"sol","type":"Lending","rabbyType":"Lending","healthRate":1.087,"healthPct":8.7,"supplied":[{"token":"PRIME","amount":291233.762338,"usd":300982.3200284909}],"borrowed":[{"token":"USDC","amount":252020.525427,"usd":252020.525427}],"description":"Loan Ea8BXKie","supSum":300982.3200284909,"borSum":252020.525427,"rewSum":0.0,"net":48961.794601490925,"poolId":"Ea8BXKie","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Loopscale","chain":"Solana","chainId":"sol","type":"Lending","rabbyType":"Lending","healthRate":1.219,"healthPct":21.9,"supplied":[{"token":"ONYC","amount":183630.045022076,"usd":201501.06056245862}],"borrowed":[{"token":"USDC","amount":148736.317674,"usd":148736.317674}],"description":"Loan 6zpxNbPj","supSum":201501.06056245862,"borSum":148736.317674,"rewSum":0.0,"net":52764.742888458626,"poolId":"6zpxNbPj","history":{"12":null,"24":null,"36":null,"48":null,"168":null,"336":null}}],"walletTokens":[],"closedPositions":[],"snapshotCount":1,"earliestSnapshotAt":"2026-04-30 14:32:33","lookbacksHours":[12,24,36,48,168,336],"benchmarks":[{"label":"1w","days":7,"equity":null,"delta":null,"pct":null,"at":null},{"label":"2w","days":14,"equity":null,"delta":null,"pct":null,"at":null},{"label":"1mo","days":30,"equity":null,"delta":null,"pct":null,"at":null},{"label":"3mo","days":90,"equity":null,"delta":null,"pct":null,"at":null},{"label":"1y","days":365,"equity":null,"delta":null,"pct":null,"at":null}],"day0":null}</script>
+<div class="footnote">Updated 2026-04-30 14:40:17 UTC &middot; Auto-refreshes every 6h &middot; Positions &gt;$50 &middot; <span id="history-note"></span></div>
+<script id="payload" type="application/json">{"wallet":"0xe16be042f9433779909a972669be3a2003956348","capturedAt":"2026-04-30 14:40:05","source":"Rabby API + Jupiter","reportedTotal":630444.0372826685,"totals":{"sup":2933934.6306548123,"bor":2303563.475611771,"net":630371.1550430413,"count":16,"lowest_hr":1.0374,"walletTokensTotal":0},"positions":[{"protocol":"Aave V3","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0503,"supplied":[{"token":"USDT","amount":50811.72285,"usd":50793.430629774}],"borrowed":[{"token":"USDC","amount":37728.428219,"usd":37735.975414082815}],"description":"","supSum":50793.430629774,"borSum":37735.975414082815,"rewSum":0,"net":13057.455215691181,"poolId":"0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":50795.9712159165,"borSum":37735.975414082815,"net":13059.995801833684,"healthRate":1.0503,"deltaNet":-2.540586142502434,"deltaSup":-2.540586142502434,"deltaBor":0.0,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Fluid","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0483,"supplied":[{"token":"reUSD","amount":131159.65291263416,"usd":140952.81862420443}],"borrowed":[{"token":"USDT","amount":121054.233105,"usd":121010.65358108221}],"description":"","supSum":140952.81862420443,"borSum":121010.65358108221,"rewSum":0,"net":19942.165043122222,"poolId":"0x324c5dc1fc42c7a4d43d92df1eba58a54d13bf2d","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":140952.81862420443,"borSum":121016.70629273745,"net":19936.112331466982,"healthRate":1.0483,"deltaNet":6.052711655240273,"deltaSup":0.0,"deltaBor":-6.052711655240273,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Curve LlamaLend","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0452,"supplied":[{"token":"sfrxUSD","amount":275773.43553,"usd":328750.57734067197}],"borrowed":[{"token":"crvUSD","amount":306407.5960615563,"usd":306499.93590300257}],"description":"","supSum":328750.57734067197,"borSum":306499.93590300257,"rewSum":0,"net":22250.6414376694,"poolId":"0x3de37c38739dfb83b7a902842bf5393040f7bf50","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":328750.57734067197,"borSum":306499.93590300257,"net":22250.6414376694,"healthRate":1.0452,"deltaNet":0.0,"deltaSup":0.0,"deltaBor":0.0,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Curve LlamaLend","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0374,"supplied":[{"token":"sUSDe","amount":314125.85536718956,"usd":386117.6938830114}],"borrowed":[{"token":"crvUSD","amount":349641.2670757982,"usd":349746.6359360348}],"description":"","supSum":386117.6938830114,"borSum":349746.6359360348,"rewSum":0,"net":36371.05794697662,"poolId":"0xb536fea3a01c95dd09932440ec802a75410139d6","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":386079.45332248067,"borSum":349746.6359360348,"net":36332.81738644588,"healthRate":1.0374,"deltaNet":38.240560530743096,"deltaSup":38.240560530743096,"deltaBor":0.0,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Aave V3","chain":"Mantle","chainId":"mnt","type":"Lending","rabbyType":"Lending","healthRate":1.0541,"supplied":[{"token":"WMNT","amount":39.895129146671614,"usd":24.881873936454443},{"token":"syrupUSDT","amount":69284.08324,"usd":77729.56986195926},{"token":"GHO","amount":36.78842980847622,"usd":36.765238852385366}],"borrowed":[{"token":"USDT0","amount":68037.065421,"usd":68012.57207744845},{"token":"USDC","amount":0.077568,"usd":0.07758351670334067}],"description":"","supSum":77791.2169747481,"borSum":68012.64966096515,"rewSum":0,"net":9778.567313782944,"poolId":"0x458f293454fe0d67ec0655f3672301301dd51422","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":77791.22866402093,"borSum":68016.0515142362,"net":9775.177149784737,"healthRate":1.0541,"deltaNet":3.3901639982068446,"deltaSup":-0.011689272840158083,"deltaBor":-3.4018532710470026,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.1283,"supplied":[{"token":"PT-apyUSD-18JUN2026","amount":201006.01797795203,"usd":197055.2861540422}],"borrowed":[{"token":"USDC","amount":150269.61938924584,"usd":150299.67932511086}],"description":"","supSum":197055.2861540422,"borSum":150299.67932511086,"rewSum":0,"net":46755.60682893134,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":197055.2861540422,"borSum":150299.67932511086,"net":46755.60682893134,"healthRate":1.1283,"deltaNet":0.0,"deltaSup":0.0,"deltaBor":0.0,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.3192,"supplied":[{"token":"PT-srNUSD-28MAY2026","amount":187379.23790052457,"usd":186119.01656957413}],"borrowed":[{"token":"USDC","amount":129169.6456022248,"usd":129195.48469916463}],"description":"","supSum":186119.01656957413,"borSum":129195.48469916463,"rewSum":0,"net":56923.5318704095,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":186119.01656957413,"borSum":129195.48469916463,"net":56923.5318704095,"healthRate":1.3192,"deltaNet":0.0,"deltaSup":0.0,"deltaBor":0.0,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0654,"supplied":[{"token":"siUSD","amount":307229.9414950857,"usd":327710.9501445745}],"borrowed":[{"token":"msUSD","amount":281371.462130582,"usd":280292.5373219175}],"description":"","supSum":327710.9501445745,"borSum":280292.5373219175,"rewSum":0,"net":47418.41282265703,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":327710.9501445745,"borSum":280292.5373219175,"net":47418.41282265703,"healthRate":1.0654,"deltaNet":0.0,"deltaSup":0.0,"deltaBor":0.0,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.5278,"supplied":[{"token":"mF-ONE","amount":148000.0,"usd":160084.55978391354}],"borrowed":[{"token":"USDC","amount":88458.05630492957,"usd":88475.75145522061}],"description":"","supSum":160084.55978391354,"borSum":88475.75145522061,"rewSum":0,"net":71608.80832869293,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":160084.55978391354,"borSum":88475.75145522061,"net":71608.80832869293,"healthRate":1.5278,"deltaNet":0.0,"deltaSup":0.0,"deltaBor":0.0,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0572,"supplied":[{"token":"sUSDe","amount":130322.31737401568,"usd":160189.7831272909}],"borrowed":[{"token":"PYUSD","amount":138536.86173821674,"usd":138536.86173821674}],"description":"","supSum":160189.7831272909,"borSum":138536.86173821674,"rewSum":0,"net":21652.921389074152,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":160173.91815348854,"borSum":138536.86173821674,"net":21637.0564152718,"healthRate":1.0572,"deltaNet":15.864973802352324,"deltaSup":15.864973802352324,"deltaBor":0.0,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Neutrl","chain":"Ethereum","chainId":"eth","type":"Yield","rabbyType":"Locked","healthRate":null,"supplied":[{"token":"NUSD","amount":95933.36997206042,"usd":95929.39210401838}],"borrowed":[],"description":"","supSum":95929.39210401838,"borSum":0,"rewSum":0,"net":95929.39210401838,"poolId":"0x08efcc2f3e61185d0ea7f8830b3fec9bfa2ee313:pending","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":95929.39210401838,"borSum":0,"net":95929.39210401838,"healthRate":null,"deltaNet":0.0,"deltaSup":0.0,"deltaBor":0,"deltaHr":null},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Pendle V2","chain":"Ethereum","chainId":"eth","type":"Yield","rabbyType":"Deposit","healthRate":null,"supplied":[{"token":"PT-reUSDe-25JUN2026","amount":35130.270946397795,"usd":34358.587800980175}],"borrowed":[],"description":"","supSum":34358.587800980175,"borSum":0,"rewSum":0,"net":34358.587800980175,"poolId":"0xdc9a5a2e3ce7ac881fc3b28c629c05d1617d1c56","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":34358.587800980175,"borSum":0,"net":34358.587800980175,"healthRate":null,"deltaNet":0.0,"deltaSup":0.0,"deltaBor":0,"deltaHr":null},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Fluid","chain":"Plasma","chainId":"plasma","type":"Lending","rabbyType":"Lending","healthRate":1.0432,"supplied":[{"token":"sUSDai","amount":249570.01805346226,"usd":270082.1998776371}],"borrowed":[{"token":"USDT0","amount":233084.377852,"usd":233000.46747597327}],"description":"","supSum":270082.1998776371,"borSum":233000.46747597327,"rewSum":0,"net":37081.732401663816,"poolId":"0x324c5dc1fc42c7a4d43d92df1eba58a54d13bf2d","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":270082.1998776371,"borSum":233012.12169486587,"net":37070.07818277122,"healthRate":1.0432,"deltaNet":11.654218892595964,"deltaSup":0.0,"deltaBor":-11.654218892595964,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Yuzu Money","chain":"Plasma","chainId":"plasma","type":"Yield","rabbyType":"Yield","healthRate":null,"supplied":[{"token":"USDT0","amount":15521.324726323905,"usd":15515.737049422427}],"borrowed":[],"description":"Yuzu Protection Pool Cooldown #26","supSum":15515.737049422427,"borSum":0,"rewSum":0,"net":15515.737049422427,"poolId":"0xebfc8c2fe73c431ef2a371aea9132110aab50dca","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":15516.513115658743,"borSum":0,"net":15516.513115658743,"healthRate":null,"deltaNet":-0.7760662363161828,"deltaSup":-0.7760662363161828,"deltaBor":0,"deltaHr":null},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Loopscale","chain":"Solana","chainId":"sol","type":"Lending","rabbyType":"Lending","healthRate":1.087,"healthPct":8.7,"supplied":[{"token":"PRIME","amount":291233.762338,"usd":300982.3200284909}],"borrowed":[{"token":"USDC","amount":252020.525427,"usd":252020.525427}],"description":"Loan Ea8BXKie","supSum":300982.3200284909,"borSum":252020.525427,"rewSum":0.0,"net":48961.794601490925,"poolId":"Ea8BXKie","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":300982.3200284909,"borSum":252020.525427,"net":48961.794601490925,"healthRate":1.087,"deltaNet":0.0,"deltaSup":0.0,"deltaBor":0.0,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}},{"protocol":"Loopscale","chain":"Solana","chainId":"sol","type":"Lending","rabbyType":"Lending","healthRate":1.219,"healthPct":21.9,"supplied":[{"token":"ONYC","amount":183630.045022076,"usd":201501.06056245862}],"borrowed":[{"token":"USDC","amount":148736.317674,"usd":148736.317674}],"description":"Loan 6zpxNbPj","supSum":201501.06056245862,"borSum":148736.317674,"rewSum":0.0,"net":52764.742888458626,"poolId":"6zpxNbPj","history":{"12":{"at":"2026-04-30 14:39:14","hoursAgo":0.0,"supSum":201501.06056245862,"borSum":148736.317674,"net":52764.742888458626,"healthRate":1.219,"deltaNet":0.0,"deltaSup":0.0,"deltaBor":0.0,"deltaHr":0.0},"24":null,"36":null,"48":null,"168":null,"336":null}}],"walletTokens":[],"closedPositions":[],"snapshotCount":5,"earliestSnapshotAt":"2026-04-30 14:32:33","lookbacksHours":[12,24,36,48,168,336],"benchmarks":[{"label":"1w","days":7,"equity":null,"delta":null,"pct":null,"at":null},{"label":"2w","days":14,"equity":null,"delta":null,"pct":null,"at":null},{"label":"1mo","days":30,"equity":null,"delta":null,"pct":null,"at":null},{"label":"3mo","days":90,"equity":null,"delta":null,"pct":null,"at":null},{"label":"1y","days":365,"equity":null,"delta":null,"pct":null,"at":null}],"day0":{"net_pos":630303.34,"equity":630303.34,"at":"2026-04-30 14:32:33","delta":67.82,"pct":0.01}}</script>
 <script>
 (function(){
   var D=JSON.parse(document.getElementById('payload').textContent);
@@ -412,6 +462,56 @@ h1{font-size:18px;font-weight:800;letter-spacing:-.04em;color:var(--text)}
   var hnEl=document.getElementById('history-note');
   if(hnEl)hnEl.textContent=D.snapshotCount+' snapshots · Day 0: '+((D.day0&&D.day0.at)||'—');
 
+  // ── Day 0 stats card ─────────────────────────────────────────────────────────
+  var d0El=document.getElementById('day0-card');
+  if(d0El&&D.day0){
+    var d0=D.day0;
+    // Format Day 0 date nicely
+    var d0Date='—';
+    if(d0.at){
+      try{
+        var dt=new Date(d0.at.replace('T',' ').replace('Z',' UTC'));
+        d0Date=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});
+      }catch(e){d0Date=d0.at;}
+    }
+    // Annualized return
+    var annHtml='<span class="day0-val val-muted">calculating…</span>';
+    if(d0.at&&d0.pct!=null){
+      try{
+        var d0ts=new Date(d0.at.replace('T',' ').replace('Z',' UTC')).getTime();
+        var nowts=new Date(D.capturedAt.replace('T',' ').replace('Z',' UTC')).getTime();
+        var daysElapsed=(nowts-d0ts)/(1000*60*60*24);
+        if(daysElapsed>=0.5){
+          var totalReturn=d0.pct/100;
+          var ann=(Math.pow(1+totalReturn,365/daysElapsed)-1)*100;
+          var annCls=ann>=0?'ann-return val-up':'ann-return val-dn';
+          annHtml='<span class="'+annCls+'">'+(ann>=0?'+':'')+ann.toFixed(1)+'%</span>'+'<div class="ann-lbl">annualized</div>';
+        }
+      }catch(e){}
+    }
+    var pnlAmt=d0.delta!=null?d0.delta:null;
+    var pnlCls=pnlAmt!=null?(pnlAmt>=0?'day0-val val-up':'day0-val val-dn'):'day0-val';
+    var pnlStr=pnlAmt!=null?((pnlAmt>=0?'+':'-')+fmtUsd(Math.abs(pnlAmt),0)):'—';
+    // Use sign of delta (not rounded pct) so -$4 / 0.00% shows as "-0.00%" not "+0.00%"
+    var pctSign=pnlAmt!=null?(pnlAmt>=0?'+':'-'):'+';
+    var pctStr=d0.pct!=null?(pctSign+Math.abs(d0.pct).toFixed(2)+'%'):'';
+    d0El.innerHTML=
+      '<div class="day0-row">'+
+        '<span class="day0-lbl">Day 0</span>'+
+        '<span class="day0-val val-muted">'+d0Date+'</span>'+
+      '</div>'+
+      '<div class="day0-row">'+
+        '<span class="day0-lbl">Starting capital</span>'+
+        '<span class="day0-val">'+fmtUsd(d0.net_pos,0)+'</span>'+
+      '</div>'+
+      '<hr class="day0-divider">'+
+      '<div class="day0-row">'+
+        '<span class="day0-lbl">P&amp;L</span>'+
+        '<span class="'+pnlCls+'">'+pnlStr+(pctStr?' <small style="font-size:10px;opacity:.75">'+pctStr+'</small>':'')+'</span>'+
+      '</div>'+
+      '<div style="margin-top:10px;text-align:center">'+annHtml+'</div>';
+  }
+
   // Performance pills: Day 0 + benchmark periods
   function perfPill(label,delta,pct){
     if(delta==null)return'<div class="perf-pill perf-na"><div class="perf-lbl">'+label+'</div><div class="perf-val">no data</div></div>';
@@ -427,11 +527,13 @@ h1{font-size:18px;font-weight:800;letter-spacing:-.04em;color:var(--text)}
       '<div class="perf-pct">'+dispPct+'</div>'+
       '</div>';
   }
+  // Only show benchmark pills that have real data (skip "no data" pills — day0 is in the card)
   var ph='';
-  if(D.day0&&D.day0.delta!=null)ph+=perfPill('Since day 0',D.day0.delta,D.day0.pct);
-  (D.benchmarks||[]).forEach(function(b){ph+=perfPill(b.label,b.delta,b.pct);});
+  (D.benchmarks||[]).forEach(function(b){
+    if(b.delta!=null)ph+=perfPill(b.label,b.delta,b.pct);
+  });
   var perfEl=document.getElementById('fund-perf');
-  if(perfEl)perfEl.innerHTML=ph;
+  if(perfEl)perfEl.innerHTML=ph||'<div style="font-size:9px;color:var(--muted-2);padding:4px 0">Benchmark data will appear after the first week</div>';
 
   // ── Leverage detail (bottom of page) ─────────────────────────────────────────
   var levEl=document.getElementById('leverage-section');
