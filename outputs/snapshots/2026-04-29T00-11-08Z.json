@@ -4,9 +4,9 @@
   "source": "Rabby API + Jupiter",
   "reportedTotal": 553255.9692622912,
   "totals": {
-    "sup": 2981495.2679019407,
-    "bor": 2329059.8132622363,
-    "net": 652435.4546397044,
+    "sup": 3032289.1466099317,
+    "bor": 2366786.465617472,
+    "net": 665502.6809924596,
     "count": 15,
     "lowest_hr": 1.0375,
     "walletTokensTotal": 2559.2546696479453
@@ -474,6 +474,34 @@
       "rewSum": 0.0,
       "net": 52795.715153458616,
       "poolId": "6zpxNbPj"
+    },
+    {
+      "protocol": "Aave V3",
+      "chain": "Ethereum",
+      "chainId": "eth",
+      "type": "Lending",
+      "rabbyType": "Lending",
+      "healthRate": 1.0505,
+      "supplied": [
+        {
+          "token": "USDT",
+          "amount": 50804.547663,
+          "usd": 50793.87870799076
+        }
+      ],
+      "borrowed": [
+        {
+          "token": "USDC",
+          "amount": 37722.87969,
+          "usd": 37726.65235523552
+        }
+      ],
+      "description": "",
+      "supSum": 50793.87870799076,
+      "borSum": 37726.65235523552,
+      "rewSum": 0,
+      "net": 13067.226352755242,
+      "poolId": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
     }
   ],
   "walletTokens": [
