@@ -948,11 +948,11 @@ EXTRA_CSS = """
   letter-spacing:-.03em;line-height:1}
 .perf-pill.perf-up .perf-val{color:var(--green)}
 .perf-pill.perf-dn .perf-val{color:var(--red)}
-.perf-pill.perf-flat .perf-val,.perf-pill.perf-na .perf-val{color:var(--muted-2)}
+.perf-pill.perf-flat .perf-val,.perf-pill.perf-na .perf-val{color:rgba(255,255,255,0.5)}
 .perf-pct{font-size:10.5px;font-weight:700;margin-top:3px}
 .perf-pill.perf-up .perf-pct{color:var(--green);opacity:.8}
 .perf-pill.perf-dn .perf-pct{color:var(--red);opacity:.8}
-.perf-pill.perf-flat .perf-pct{color:var(--muted-2)}
+.perf-pill.perf-flat .perf-pct{color:rgba(255,255,255,0.35)}
 
 /* ── Leverage detail cards ── */
 .lev-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
@@ -1052,14 +1052,16 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   // Performance pills: Day 0 + benchmark periods
   function perfPill(label,delta,pct){
     if(delta==null)return'<div class="perf-pill perf-na"><div class="perf-lbl">'+label+'</div><div class="perf-val">no data</div></div>';
-    var flat=pct!=null&&Math.abs(pct)<0.05;
+    var flat=pct!=null&&Math.abs(pct)<0.01;
     var up=delta>=0;
     var cls=flat?'perf-flat':(up?'perf-up':'perf-dn');
-    var sign=(up&&!flat)?'+':'';
+    var sign=up?'+':'-';
+    var dispDelta=sign+fmtUsd(Math.abs(delta),0);
+    var dispPct=(up?'+':'')+pct.toFixed(2)+'%';
     return'<div class="perf-pill '+cls+'">'+
       '<div class="perf-lbl">'+label+'</div>'+
-      '<div class="perf-val">'+(flat?'\u2014':sign+fmtUsd(Math.abs(delta),0))+'</div>'+
-      '<div class="perf-pct">'+(flat?'flat':((up?'+':'')+pct.toFixed(2)+'%'))+'</div>'+
+      '<div class="perf-val">'+dispDelta+'</div>'+
+      '<div class="perf-pct">'+dispPct+'</div>'+
       '</div>';
   }
   var ph='';
