@@ -982,8 +982,8 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   // Each cell shows its VALUE coloured relative to the NEXT-OLDER cell.
   // The oldest populated cell is always flat (it's the baseline).
   // The "Now" cell is coloured relative to the 12h cell (most recent history).
-  // Threshold: 0.1% of the value, minimum $50. Suppresses noise on small moves.
-  function thr(v){return Math.max(50,Math.abs(v)*0.001);}
+  // Threshold: 0.03% of the value, minimum $15.
+  function thr(v){return Math.max(15,Math.abs(v)*0.0003);}
   function dirCls(val,prevVal,kind){
     if(prevVal==null)return'cell-flat';
     var diff=val-prevVal;
@@ -1040,7 +1040,7 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   // Performance pills: Day 0 + benchmark periods
   function perfPill(label,delta,pct){
     if(delta==null)return'<div class="perf-pill perf-na"><div class="perf-lbl">'+label+'</div><div class="perf-val">no data</div></div>';
-    var flat=pct!=null&&Math.abs(pct)<0.1;
+    var flat=pct!=null&&Math.abs(pct)<0.05;
     var up=delta>=0;
     var cls=flat?'perf-flat':(up?'perf-up':'perf-dn');
     var sign=(up&&!flat)?'+':'';
@@ -1094,7 +1094,7 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   });
 
   var rows=[];
-  var totalEquity=eq;
+  var totalEquity=netPos;  // same as fund hero — netPos = t.net + wallet tokens
 
   if(groupOrder.length){
     rows.push('<tr class="section-divider"><td colspan="'+COLSPAN+'">DeFi positions</td></tr>');
