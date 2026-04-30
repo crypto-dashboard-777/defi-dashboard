@@ -486,6 +486,18 @@ def build_history(current: dict, snapshots: list[dict]):
     # exclude the current snapshot itself from the history pool
     older = [s for s in snapshots if s.get("capturedAt") != current["capturedAt"]]
 
+    # Pre-compute which snapshot maps to each lookback — deduplicate so the
+    # same snapshot never appears in two columns (avoids "24h = 36h" clones).
+    _used_snaps: set[str] = set()
+    _lookback_map: dict[int, tuple] = {}
+    for h in LOOKBACKS_H:
+        snap, hago = find_lookback_snapshot(older, current_t, h)
+        if snap is None or snap.get("capturedAt") in _used_snaps:
+            _lookback_map[h] = (None, None)
+        else:
+            _used_snaps.add(snap["capturedAt"])
+            _lookback_map[h] = (snap, hago)
+
     cur_keys = {position_key(p): p for p in current["positions"]}
 
     # Per-position history
@@ -494,7 +506,7 @@ def build_history(current: dict, snapshots: list[dict]):
         key = position_key(p)
         history = {}
         for h in LOOKBACKS_H:
-            snap, hago = find_lookback_snapshot(older, current_t, h)
+            snap, hago = _lookback_map[h]
             if snap is None:
                 history[str(h)] = None
                 continue
@@ -551,7 +563,7 @@ def build_history(current: dict, snapshots: list[dict]):
         key = wallet_token_key(wt)
         history = {}
         for h in LOOKBACKS_H:
-            snap, hago = find_lookback_snapshot(older, current_t, h)
+            snap, hago = _lookback_map[h]
             if snap is None:
                 history[str(h)] = None
                 continue
@@ -774,8 +786,8 @@ h1{font-size:18px;font-weight:800;letter-spacing:-.04em;color:var(--text)}
 .now-cell.neg{color:var(--red)}
 .cell-up{color:var(--green);font-weight:600}
 .cell-down{color:var(--red);font-weight:600}
-.cell-flat{color:var(--muted-2)}
-.cell-empty{color:var(--muted-2);font-size:11px;opacity:.5}
+.cell-flat{color:rgba(255,255,255,0.45)}
+.cell-empty{color:rgba(255,255,255,0.18);font-size:11px}
 .cell-new{color:var(--amber);font-size:9.5px;font-weight:700;letter-spacing:.04em}
 
 /* ── Wallet rows ── */
@@ -1247,7 +1259,7 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
 <!-- ── Leverage detail (bottom) ─────────────────────────────────── -->
 <div class="leverage-section" id="leverage-section"></div>
 
-<div class="footnote">Updated {generated_at} UTC &middot; Auto-refreshes every 12h &middot; Positions &gt;$50 &middot; <span id="history-note"></span></div>
+<div class="footnote">Updated {generated_at} UTC &middot; Auto-refreshes every 6h &middot; Positions &gt;$50 &middot; <span id="history-note"></span></div>
 <script id="payload" type="application/json">{payload_safe}</script>
 <script>{js}</script>
 </body></html>"""

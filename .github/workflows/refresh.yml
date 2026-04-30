@@ -2,7 +2,7 @@ name: Refresh DeFi Dashboard
 
 on:
   schedule:
-    - cron: '0 0,12 * * *'   # midnight and noon UTC (12h cadence)
+    - cron: '0 */6 * * *'    # every 6h UTC (midnight, 6am, noon, 6pm)
   workflow_dispatch:           # manual trigger via GitHub UI
 
 permissions:
