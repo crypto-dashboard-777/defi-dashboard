@@ -914,12 +914,16 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   function fmtPct(p){if(p==null)return'—';return(p>=0?'+':'')+p.toFixed(2)+'%';}
   function hrCls(h){return h==null?'gray':(h<1.05?'red':(h<1.15?'amber':'green'));}
 
-  // 0.01% threshold
+  // Historical cells show DELTA (now − then), coloured by direction.
+  // Flat within 0.005% of the current value → muted dash.
   function histCell(cur,hist,kind){
     if(hist==null)return'<td class="cell-empty">—</td>';
-    var diff=cur-hist,thr=Math.max(5,Math.abs(cur)*0.00005),cls='cell-flat';
-    if(Math.abs(diff)>=thr)cls=kind==='liability'?(diff>0?'cell-down':'cell-up'):(diff>0?'cell-up':'cell-down');
-    return'<td class="'+cls+'">'+fmtUsd(hist)+'</td>';
+    var diff=cur-hist,thr=Math.max(5,Math.abs(cur)*0.00005);
+    if(Math.abs(diff)<thr)return'<td class="cell-flat" title="'+fmtUsd(hist)+'">—</td>';
+    var up=kind==='liability'?(diff<0):(diff>0);
+    var cls=up?'cell-up':'cell-down';
+    var sign=diff>0?'+':'';
+    return'<td class="'+cls+'" title="was '+fmtUsd(hist)+'">'+sign+fmtUsd(diff,0)+'</td>';
   }
   function newCell(){return'<td class="cell-new">new</td>';}
   function emptyCell(){return'<td class="cell-empty">—</td>';}
@@ -935,8 +939,9 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
 
   // ── Summary cards ────────────────────────────────────────────────────────────
   var t=D.totals,wt=t.walletTokensTotal||0,eq=D.reportedTotal||(t.net+wt);
+  var netPos=(t.net||0)+(wt||0);
   document.getElementById('summary').innerHTML=
-    '<div class="cell cell-net summary-net"><div class="label">Net position</div><div class="value">'+fmtUsd(t.net)+'</div></div>'+
+    '<div class="cell cell-net summary-net"><div class="label">Net&ensp;<span style="font-size:10px;font-weight:500;color:var(--muted-2);letter-spacing:.02em">collateral − debt + wallet</span></div><div class="value">'+fmtUsd(netPos)+'</div></div>'+
     '<div class="cell cell-collat"><div class="label">Collateral</div><div class="value">'+fmtUsd(t.sup)+'</div></div>'+
     '<div class="cell cell-debt"><div class="label">Debt</div><div class="value cell-val-debt">'+fmtUsd(t.bor)+'</div></div>';
 
