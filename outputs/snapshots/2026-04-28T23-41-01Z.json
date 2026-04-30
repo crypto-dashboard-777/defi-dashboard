@@ -4,9 +4,9 @@
   "source": "Rabby API + Jupiter",
   "reportedTotal": 553215.8988364545,
   "totals": {
-    "sup": 2932840.823299431,
-    "bor": 2366815.6769617717,
-    "net": 566025.146337659,
+    "sup": 2981484.4768179078,
+    "bor": 2329089.024606536,
+    "net": 652395.4522113716,
     "count": 15,
     "lowest_hr": 1.0375,
     "walletTokensTotal": 2559.233952499642
@@ -280,6 +280,50 @@
       "poolId": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending"
     },
     {
+      "protocol": "Morpho",
+      "chain": "Ethereum",
+      "chainId": "eth",
+      "type": "Yield",
+      "rabbyType": "Yield",
+      "healthRate": null,
+      "supplied": [
+        {
+          "token": "USDT",
+          "amount": 50801.531914,
+          "usd": 50785.27542378752
+        }
+      ],
+      "borrowed": [],
+      "description": "Steakhouse Prime Instant",
+      "supSum": 50785.27542378752,
+      "borSum": 0,
+      "rewSum": 0,
+      "net": 50785.27542378752,
+      "poolId": "0xbeef003c68896c7d2c3c60d363e8d71a49ab2bf9"
+    },
+    {
+      "protocol": "Morpho",
+      "chain": "Ethereum",
+      "chainId": "eth",
+      "type": "Yield",
+      "rabbyType": "Yield",
+      "healthRate": null,
+      "supplied": [
+        {
+          "token": "USDC",
+          "amount": 48647.391577,
+          "usd": 48652.25680268027
+        }
+      ],
+      "borrowed": [],
+      "description": "Steakhouse Reservoir USDC",
+      "supSum": 48652.25680268027,
+      "borSum": 0,
+      "rewSum": 0,
+      "net": 48652.25680268027,
+      "poolId": "0xbeeff047c03714965a54b671a37c18bef6b96210"
+    },
+    {
       "protocol": "Neutrl",
       "chain": "Ethereum",
       "chainId": "eth",
@@ -430,34 +474,6 @@
       "rewSum": 0.0,
       "net": 52795.715153458616,
       "poolId": "6zpxNbPj"
-    },
-    {
-      "protocol": "Aave V3",
-      "chain": "Ethereum",
-      "chainId": "eth",
-      "type": "Lending",
-      "rabbyType": "Lending",
-      "healthRate": 1.0505,
-      "supplied": [
-        {
-          "token": "USDT",
-          "amount": 50804.547663,
-          "usd": 50793.87870799076
-        }
-      ],
-      "borrowed": [
-        {
-          "token": "USDC",
-          "amount": 37722.87969,
-          "usd": 37726.65235523552
-        }
-      ],
-      "description": "",
-      "supSum": 50793.87870799076,
-      "borSum": 37726.65235523552,
-      "rewSum": 0,
-      "net": 13067.226352755242,
-      "poolId": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
     }
   ],
   "walletTokens": [
