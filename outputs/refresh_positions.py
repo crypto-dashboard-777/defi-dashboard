@@ -442,9 +442,9 @@ def parse_captured(s: str) -> datetime:
 def find_lookback_snapshot(snapshots: list[dict], current_t: datetime, hours: int):
     """Given list of snapshots (sorted asc) and the current time, find the snapshot
     closest to (current_t - hours), within ±hours/2 tolerance.
-    For the 12h slot specifically, fall back to the most-recent prior snapshot
-    if none falls within tolerance (so the column populates as soon as ≥2 snapshots exist).
-    Returns (snapshot_dict, hours_ago_actual) or (None, None)."""
+    Returns (snapshot_dict, hours_ago_actual) or (None, None) if no snapshot falls
+    within the tolerance window — columns only populate when real data exists for
+    that time period, and fill in rightward automatically over time."""
     target = current_t - timedelta(hours=hours)
     tolerance = timedelta(hours=hours / 2)
     best = None
@@ -458,20 +458,6 @@ def find_lookback_snapshot(snapshots: list[dict], current_t: datetime, hours: in
         if dist <= tolerance and (best_dist is None or dist < best_dist):
             best = s
             best_dist = dist
-    if best is None and hours == 12:
-        # Fallback: use most recent prior snapshot at least 1h old (skip back-to-back
-        # script runs so the column shows a meaningful baseline).
-        min_age = timedelta(hours=1)
-        prior = [s for s in snapshots
-                 if s.get("capturedAt") and (current_t - parse_captured(s["capturedAt"])) >= min_age]
-        if prior:
-            best = prior[-1]
-        else:
-            # Last resort: any prior snapshot
-            any_prior = [s for s in snapshots
-                         if s.get("capturedAt") and parse_captured(s["capturedAt"]) < current_t]
-            if any_prior:
-                best = any_prior[-1]
     if best is None:
         return None, None
     actual_hours = (current_t - parse_captured(best["capturedAt"])).total_seconds() / 3600
