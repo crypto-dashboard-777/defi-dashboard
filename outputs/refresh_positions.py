@@ -1151,7 +1151,7 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
       '<div class="lev-cards">'+
         '<div class="lev-card lev-collat"><div class="lev-lbl">Total collateral</div><div class="lev-val">'+fmtUsd(t.sup)+'</div></div>'+
         '<div class="lev-card lev-debt"><div class="lev-lbl">Total debt</div><div class="lev-val lev-val-debt">'+fmtUsd(t.bor)+'</div></div>'+
-        '<div class="lev-card lev-net2"><div class="lev-lbl">DeFi net</div><div class="lev-val">'+fmtUsd(t.net)+'</div></div>'+
+        '<div class="lev-card lev-net2"><div class="lev-lbl">Portfolio net</div><div class="lev-val">'+fmtUsd(eq)+'</div></div>'+
       '</div>';
   }
 
@@ -1276,16 +1276,8 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
       }).join('')+'</tbody></table>';
   }
 
-  // Live EVM total
-  fetch('https://api.rabby.io/v1/user/total_balance?id='+D.wallet,{headers:{'accept':'application/json'}})
-  .then(function(r){return r.json();}).then(function(j){
-    var live=j&&j.total_usd_value;if(live==null)return;
-    var diff=live-totalEquity,pct=totalEquity?(diff/totalEquity*100):0;
-    var cls=Math.abs(pct)<0.01?'cell-flat':(diff>=0?'cell-up':'cell-down');
-    document.getElementById('live-line').innerHTML=
-      'Live EVM: <strong>'+fmtUsd(live)+'</strong> <span class="'+cls+'" style="font-size:10px">'+
-      (diff>=0?'▲':'▼')+' '+Math.abs(pct).toFixed(2)+'%</span>';
-  }).catch(function(){});
+  // (live EVM-only fetch removed — it only returns EVM and would show
+  //  a misleading -16% vs the combined EVM+Solana total in the hero)
 })();
 """
 
