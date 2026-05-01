@@ -480,8 +480,19 @@ def build_history(current: dict, snapshots: list[dict]):
     containing per-lookback comparison data, and produce a list of closed positions.
     Returns a *new* enriched snapshot dict."""
     current_t = parse_captured(current["capturedAt"])
-    # exclude the current snapshot itself from the history pool
-    older = [s for s in snapshots if s.get("capturedAt") != current["capturedAt"]]
+    # Load Day 0 timestamp so we can exclude it from the lookback pool.
+    # Day 0 is the permanent baseline shown in the hero card — it should
+    # never also appear as a "36H" or "24H" column entry.
+    _d0_at = ""
+    try:
+        _d0_path = Path(__file__).parent.parent / "outputs/snapshots/day0.json"
+        _d0_at = json.loads(_d0_path.read_text()).get("capturedAt", "")
+    except Exception:
+        pass
+    # Exclude: current snapshot itself, and the Day 0 baseline
+    older = [s for s in snapshots
+             if s.get("capturedAt") != current["capturedAt"]
+             and s.get("capturedAt") != _d0_at]
 
     # Pre-compute which snapshot maps to each lookback — deduplicate so the
     # same snapshot never appears in two columns (avoids "24h = 36h" clones).
