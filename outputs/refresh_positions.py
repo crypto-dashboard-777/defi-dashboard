@@ -457,7 +457,7 @@ def find_lookback_snapshot(snapshots: list[dict], current_t: datetime, hours: in
     within the tolerance window — columns only populate when real data exists for
     that time period, and fill in rightward automatically over time."""
     target = current_t - timedelta(hours=hours)
-    tolerance = timedelta(hours=hours / 2)
+    tolerance = timedelta(hours=hours / 2 + 1)   # +1h buffer so GH Actions drift doesn't blank a column
     best = None
     best_dist = None
     for s in snapshots:
