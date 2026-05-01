@@ -1355,9 +1355,34 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
     return html
 
 
+def _history_display_snaps(snapshots: list[dict]) -> list[dict]:
+    """Return one representative snapshot per 6h bucket (most recent wins).
+    Always includes the most recent snapshot and the Day 0 snapshot.
+    This keeps the history page clean while all snapshots remain on disk
+    for the time-series lookback columns."""
+    if not snapshots:
+        return []
+    by_ts = sorted(snapshots, key=lambda s: s.get("capturedAt", ""), reverse=True)
+    seen_buckets: set[str] = set()
+    display: list[dict] = []
+    for s in by_ts:
+        at = s.get("capturedAt", "")
+        try:
+            dt = parse_captured(at)
+            # 6h bucket key: date + which 6h window (0,6,12,18)
+            bucket = f"{dt.date()}-{(dt.hour // 6) * 6:02d}"
+        except Exception:
+            bucket = at
+        if bucket not in seen_buckets:
+            seen_buckets.add(bucket)
+            display.append(s)
+    return display
+
+
 def render_history_html(snapshots: list[dict], generated_at: str) -> str:
     """Full chronological snapshot history page."""
-    sorted_snaps = sorted(snapshots, key=lambda s: s.get("capturedAt", ""), reverse=True)
+    sorted_snaps = sorted(_history_display_snaps(snapshots),
+                          key=lambda s: s.get("capturedAt", ""), reverse=True)
     d0_at = ""
     d0_path = Path(__file__).parent.parent / "outputs/snapshots/day0.json"
     if d0_path.exists():
