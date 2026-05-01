@@ -414,19 +414,30 @@ def save_timestamped_snapshot(snapshots_dir: Path, snap: dict) -> Path:
     return path
 
 
+SNAPSHOT_SKIP = {"latest.json", "latest.compact.json", "day0.json"}
+
 def load_all_snapshots(snapshots_dir: Path) -> list[dict]:
-    """Load all timestamped snapshot files, sorted by capturedAt ascending."""
+    """Load all timestamped snapshot files, sorted by capturedAt ascending.
+    Skips latest.json, latest.compact.json, and day0.json to avoid duplicates.
+    Also deduplicates by capturedAt so multiple files with the same timestamp
+    (e.g. from back-to-back script runs) only count once."""
     if not snapshots_dir.exists():
         return []
     snaps = []
+    seen_ts: set[str] = set()
     for f in snapshots_dir.iterdir():
         if not f.is_file() or not f.suffix == ".json":
             continue
-        if f.name.startswith("latest"):
+        if f.name in SNAPSHOT_SKIP:
             continue
         try:
             with open(f) as fh:
-                snaps.append(json.load(fh))
+                s = json.load(fh)
+            ts = s.get("capturedAt", "")
+            if ts in seen_ts:
+                continue
+            seen_ts.add(ts)
+            snaps.append(s)
         except (json.JSONDecodeError, OSError):
             pass
     snaps.sort(key=lambda s: s.get("capturedAt", ""))
@@ -572,26 +583,19 @@ def build_history(current: dict, snapshots: list[dict]):
     benchmarks = compute_benchmarks(current, snapshots)
 
     # Day 0 baseline — permanent file written once
-    # Use net_pos (t.net + walletTokensTotal) for a consistent apples-to-apples comparison
+    # Use reportedTotal everywhere for consistency with the history page
     day0_info = None
     day0_path = Path(__file__).parent.parent / "outputs/snapshots/day0.json"
     if day0_path.exists():
         try:
             d0 = json.loads(day0_path.read_text())
-            d0_t   = d0.get("totals") or {}
-            d0_net_pos = (d0_t.get("net") or 0) + (d0_t.get("walletTokensTotal") or 0)
-            # Fall back to reportedTotal if totals not present
-            if d0_net_pos == 0:
-                d0_net_pos = d0.get("reportedTotal") or 0
-            cur_t  = current.get("totals") or {}
-            cur_net_pos = (cur_t.get("net") or 0) + (cur_t.get("walletTokensTotal") or 0)
-            if cur_net_pos == 0:
-                cur_net_pos = current.get("reportedTotal") or 0
+            d0_net_pos  = d0.get("reportedTotal") or 0
+            cur_net_pos = current.get("reportedTotal") or 0
             delta = cur_net_pos - d0_net_pos
             pct   = round(delta / d0_net_pos * 100, 2) if d0_net_pos else 0
             day0_info = {
                 "net_pos": round(d0_net_pos, 2),
-                "equity":  round(d0_net_pos, 2),   # kept for compat
+                "equity":  round(d0_net_pos, 2),
                 "at":      d0.get("capturedAt"),
                 "delta":   round(delta, 2),
                 "pct":     pct,
@@ -1050,11 +1054,14 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   }
 
   // ── Fund hero ────────────────────────────────────────────────────────────────
-  var t=D.totals,wt=t.walletTokensTotal||0,eq=D.reportedTotal||(t.net+wt);
-  var netPos=(t.net||0)+(wt||0);
+  // Use reportedTotal everywhere — same field as history page — so Day 0 card,
+  // hero balance, total equity row, and delta all reference identical numbers.
+  var t=D.totals,wt=t.walletTokensTotal||0;
+  var eq=D.reportedTotal||(t.net+wt);   // canonical portfolio total
+  var netPos=eq;                          // alias used throughout
 
   var balEl=document.getElementById('fund-balance');
-  if(balEl)balEl.textContent=fmtUsd(netPos);
+  if(balEl)balEl.textContent=fmtUsd(eq);
   var metaEl=document.getElementById('fund-meta');
   if(metaEl)metaEl.textContent='as of '+D.capturedAt+' UTC  \u00b7  '+D.wallet.slice(0,6)+'\u2026'+D.wallet.slice(-4);
   var hnEl=document.getElementById('history-note');
@@ -1443,7 +1450,7 @@ def render_and_write_dashboard(snapshots_dir: Path, dashboard_path: Path, curren
     print(f"[refresh] Positions page ({len(html):,} bytes, {len(snapshots)} snapshots) → {dashboard_path}")
 
     history_path = dashboard_path.parent / "history.html"
-    hist_html    = render_history_html(snapshots + [current], gen_at)
+    hist_html    = render_history_html(snapshots, gen_at)
     history_path.write_text(hist_html, encoding="utf-8")
     print(f"[refresh] History page ({len(hist_html):,} bytes) → {history_path}")
 
