@@ -1715,7 +1715,8 @@ def loopscale_positions(meta: dict | None = None) -> tuple[list[dict], float]:
     with urllib.request.urlopen(req, timeout=30) as r:
         data = json.loads(r.read())
 
-    loan_infos = data.get("loanInfos", [])
+    # API changed response key from "loanInfos" to "items" — support both
+    loan_infos = data.get("items", data.get("loanInfos", []))
     # Active = not closed AND has at least one active ledger
     active = [li for li in loan_infos
               if not li.get("loan", {}).get("closed", True) and li.get("ledgers")]
@@ -1777,11 +1778,11 @@ def loopscale_positions(meta: dict | None = None) -> tuple[list[dict], float]:
         prin_sym = ((KNOWN_SOL_MINTS.get(prin_mint) or meta.get(prin_mint) or {}).get("symbol") or "USDC").upper()
         col_sym  = ((KNOWN_SOL_MINTS.get(col_mint)  or meta.get(col_mint)  or {}).get("symbol") or col_mint[:6]).upper()
 
-        # USD amounts
+        # USD amounts — fall back to server-computed values if token prices failed
         prin_amount = prin_raw / (10 ** prin_dec)
         col_amount  = col_raw  / (10 ** col_dec)
-        prin_usd    = prin_amount * prin_price
-        col_usd     = col_amount  * col_price
+        prin_usd    = prin_amount * prin_price or float(li.get("principalUsd") or 0)
+        col_usd     = col_amount  * col_price  or float(li.get("collateralUsd") or 0)
         net_usd     = col_usd - prin_usd
 
         # Health: % distance to liquidation
