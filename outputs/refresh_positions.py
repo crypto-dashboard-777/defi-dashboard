@@ -484,9 +484,11 @@ def build_history(current: dict, snapshots: list[dict]):
     # Day 0 is the permanent baseline shown in the hero card — it should
     # never also appear as a "36H" or "24H" column entry.
     _d0_at = ""
+    _d0_snap = None
     try:
         _d0_path = Path(__file__).parent.parent / "outputs/snapshots/day0.json"
-        _d0_at = json.loads(_d0_path.read_text()).get("capturedAt", "")
+        _d0_snap = json.loads(_d0_path.read_text())
+        _d0_at = _d0_snap.get("capturedAt", "")
     except Exception:
         pass
     # Exclude: current snapshot itself, and the Day 0 baseline
@@ -539,6 +541,29 @@ def build_history(current: dict, snapshots: list[dict]):
                     "deltaHr": (p.get("healthRate") - match["healthRate"])
                                 if (p.get("healthRate") is not None and match.get("healthRate") is not None) else None,
                 }
+        # Day 0 column — always anchored to day0.json regardless of age
+        if _d0_snap:
+            d0_match = next((q for q in _d0_snap.get("positions", []) if position_key(q) == key), None)
+            d0_hago = (current_t - parse_captured(_d0_at)).total_seconds() / 3600 if _d0_at else None
+            if d0_match:
+                history["d0"] = {
+                    "at": _d0_at,
+                    "hoursAgo": round(d0_hago, 1) if d0_hago is not None else None,
+                    "supSum": d0_match["supSum"],
+                    "borSum": d0_match["borSum"],
+                    "net": d0_match["net"],
+                    "healthRate": d0_match.get("healthRate"),
+                    "deltaNet": p["net"] - d0_match["net"],
+                    "deltaSup": p["supSum"] - d0_match["supSum"],
+                    "deltaBor": p["borSum"] - d0_match["borSum"],
+                    "deltaHr": (p.get("healthRate") - d0_match["healthRate"])
+                                if (p.get("healthRate") is not None and d0_match.get("healthRate") is not None) else None,
+                }
+            else:
+                history["d0"] = None
+        else:
+            history["d0"] = None
+
         enriched = dict(p)
         enriched["history"] = history
         enriched_positions.append(enriched)
@@ -587,6 +612,24 @@ def build_history(current: dict, snapshots: list[dict]):
                     "deltaUsd": wt["usd"] - match["usd"],
                     "deltaAmount": wt["amount"] - match["amount"],
                 }
+        # Day 0 wallet token column
+        if _d0_snap:
+            d0_hago = (current_t - parse_captured(_d0_at)).total_seconds() / 3600 if _d0_at else None
+            d0_wt = next((q for q in (_d0_snap.get("walletTokens") or []) if wallet_token_key(q) == key), None)
+            if d0_wt:
+                history["d0"] = {
+                    "at": _d0_at,
+                    "hoursAgo": round(d0_hago, 1) if d0_hago is not None else None,
+                    "usd": d0_wt["usd"],
+                    "amount": d0_wt["amount"],
+                    "deltaUsd": wt["usd"] - d0_wt["usd"],
+                    "deltaAmount": wt["amount"] - d0_wt["amount"],
+                }
+            else:
+                history["d0"] = {"at": _d0_at, "hoursAgo": round(d0_hago, 1) if d0_hago is not None else None, "absent": True}
+        else:
+            history["d0"] = None
+
         e = dict(wt)
         e["history"] = history
         enriched_wallet.append(e)
@@ -992,6 +1035,10 @@ EXTRA_CSS = """
 .lev-val{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;
   letter-spacing:-.04em;color:var(--text)}
 .lev-val-debt{color:var(--borrow)!important}
+
+/* ── Day 0 column ── */
+th.d0-hdr{color:var(--amber)!important;border-left:1px solid var(--border-2)!important;}
+td.d0-col{border-left:1px solid var(--border-2)!important;color:rgba(255,255,255,0.45)!important;font-style:italic}
 """
 
 
@@ -1001,7 +1048,7 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
     payload_json = _json.dumps(enriched, separators=(",", ":"), default=str)
     payload_safe = payload_json.replace("</", "<\\/")
     # Column headers — compact labels
-    lh_hdrs = "".join(f'<th>{_lh_label(h)}</th>' for h in LOOKBACKS_H)
+    lh_hdrs = "".join(f'<th>{_lh_label(h)}</th>' for h in LOOKBACKS_H) + '<th class="d0-hdr">Day 0</th>'
 
     js = """
 (function(){
@@ -1054,14 +1101,21 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
     var hc=hvals.map(function(val,i){
       var hh=hist&&hist[String(L[i])];
       if(val==null){if(!hh)return emptyCell();return hh.absent?newCell():emptyCell();}
-      if(i===oldestIdx)return'<td class="cell-flat">'+fmtUsd(val)+'</td>';
+      // Day 0 cell is the true oldest anchor — if it exists, lookback cells compare to it
+      var d0val=(hist&&hist.d0&&!hist.d0.absent)?getH(hist.d0):null;
+      if(i===oldestIdx&&d0val==null)return'<td class="cell-flat">'+fmtUsd(val)+'</td>';
       // Find next older non-null
       var prevVal=null;
       for(var j=i+1;j<hvals.length;j++){if(hvals[j]!=null){prevVal=hvals[j];break;}}
+      if(prevVal==null&&d0val!=null)prevVal=d0val;
       return'<td class="'+dirCls(val,prevVal,kind)+'">'+fmtUsd(val)+'</td>';
     }).join('');
 
-    return'<tr class="subrow '+kl+'"><td>'+lbl+'</td>'+nowTd+hc+'</tr>';
+    // Day 0 column — always anchored to day0.json, flat styling (it's the absolute baseline)
+    var d0hh=hist&&hist.d0;
+    var d0cell=d0hh==null?emptyCell():(d0hh.absent?newCell():'<td class="cell-flat d0-col">'+fmtUsd(getH(d0hh))+'</td>');
+
+    return'<tr class="subrow '+kl+'"><td>'+lbl+'</td>'+nowTd+hc+d0cell+'</tr>';
   }
 
   // ── Fund hero ────────────────────────────────────────────────────────────────
@@ -1168,7 +1222,7 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
 
 
   // ── Token-first grouped table ────────────────────────────────────────────────
-  var COLSPAN=2+L.length;
+  var COLSPAN=2+L.length+1;  // +1 for Day 0 column
 
   // Group DeFi positions by their primary token(s)
   // Key = sorted supply tokens joined (e.g. "FRAX+USDC" or "siUSD")
@@ -1241,18 +1295,22 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   sW.forEach(function(w){
     var amt=w.amount>=1?Math.round(w.amount).toLocaleString('en-US'):w.amount.toFixed(4);
     var wvals=L.map(function(h){var hh=w.history&&w.history[String(h)];return(hh&&!hh.absent)?hh.usd:null;});
+    var wD0val=(w.history&&w.history.d0&&!w.history.d0.absent)?w.history.d0.usd:null;
     var wOldest=-1;for(var i=wvals.length-1;i>=0;i--){if(wvals[i]!=null){wOldest=i;break;}}
     var wNowCls='now-cell '+dirCls(w.usd,wvals[0],'asset');
     var whc=wvals.map(function(val,i){
       var hh=w.history&&w.history[String(L[i])];
       if(val==null){if(!hh)return emptyCell();return hh.absent?newCell():emptyCell();}
-      if(i===wOldest)return'<td class="cell-flat">'+fmtUsd(val)+'</td>';
+      if(i===wOldest&&wD0val==null)return'<td class="cell-flat">'+fmtUsd(val)+'</td>';
       var pv=null;for(var j=i+1;j<wvals.length;j++){if(wvals[j]!=null){pv=wvals[j];break;}}
+      if(pv==null&&wD0val!=null)pv=wD0val;
       return'<td class="'+dirCls(val,pv,'asset')+'">'+fmtUsd(val)+'</td>';
     }).join('');
+    var wd0hh=w.history&&w.history.d0;
+    var wd0cell=wd0hh==null?emptyCell():(wd0hh.absent?newCell():'<td class="cell-flat d0-col">'+fmtUsd(wd0hh.usd)+'</td>');
     rows.push('<tr class="wallet-row"><td><span class="tok-name">'+w.token+'</span>'+
       '<span class="tok-chain">'+w.chain+'</span><span class="tok-qty">'+amt+'</span></td>'+
-      '<td class="'+wNowCls.trim()+'">'+fmtUsd(w.usd)+'</td>'+whc+'</tr>');
+      '<td class="'+wNowCls.trim()+'">'+fmtUsd(w.usd)+'</td>'+whc+wd0cell+'</tr>');
   });
 
   // Totals row — time-series coloring same logic
@@ -1262,15 +1320,22 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
     sW.forEach(function(w){var hh=w.history&&w.history[String(h)];if(hh&&!hh.absent&&hh.usd!=null){s+=hh.usd;any=true;}});
     return any?s:null;
   });
+  // Day 0 total — sum positions + wallet from d0 entries (matches Starting Capital exactly)
+  var tD0=0,tD0any=false;
+  D.positions.forEach(function(p){var hh=p.history&&p.history.d0;if(hh&&!hh.absent&&hh.net!=null){tD0+=hh.net;tD0any=true;}});
+  sW.forEach(function(w){var hh=w.history&&w.history.d0;if(hh&&!hh.absent&&hh.usd!=null){tD0+=hh.usd;tD0any=true;}});
+  var tD0val=tD0any?(D.day0&&D.day0.net_pos)||tD0:null;  // prefer reportedTotal from day0 to avoid rounding drift
   var tOldest=-1;for(var ti=tvals.length-1;ti>=0;ti--){if(tvals[ti]!=null){tOldest=ti;break;}}
   var tNowCls='now-cell '+dirCls(totalEquity,tvals[0],'asset');
   var tc=tvals.map(function(val,i){
     if(val==null)return emptyCell();
-    if(i===tOldest)return'<td class="cell-flat">'+fmtUsd(val)+'</td>';
+    if(i===tOldest&&tD0val==null)return'<td class="cell-flat">'+fmtUsd(val)+'</td>';
     var pv=null;for(var j=i+1;j<tvals.length;j++){if(tvals[j]!=null){pv=tvals[j];break;}}
+    if(pv==null&&tD0val!=null)pv=tD0val;
     return'<td class="'+dirCls(val,pv,'asset')+'">'+fmtUsd(val)+'</td>';
   }).join('');
-  rows.push('<tr class="totals-row"><td>Total equity</td><td class="'+tNowCls.trim()+'">'+fmtUsd(totalEquity)+'</td>'+tc+'</tr>');
+  var tD0cell=tD0val==null?emptyCell():'<td class="cell-flat d0-col">'+fmtUsd(tD0val)+'</td>';
+  rows.push('<tr class="totals-row"><td>Total equity</td><td class="'+tNowCls.trim()+'">'+fmtUsd(totalEquity)+'</td>'+tc+tD0cell+'</tr>');
   document.getElementById('tbody').innerHTML=rows.join('');
 
   // Closed positions
