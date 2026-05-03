@@ -656,6 +656,16 @@ def build_history(current: dict, snapshots: list[dict]):
         except Exception:
             pass
 
+    # Store each lookback column's actual reportedTotal from the snapshot file.
+    # The JS Total equity row uses this instead of summing per-position nets,
+    # which would miss wallet tokens that existed historically but not now.
+    lookback_totals = {}
+    for h in LOOKBACKS_H:
+        snap, _ = _lookback_map[h]
+        lookback_totals[str(h)] = round(snap["reportedTotal"], 2) if snap else None
+    # Day 0 column total
+    lookback_totals["d0"] = round(_d0_snap["reportedTotal"], 2) if _d0_snap else None
+
     return {
         **current,
         "positions": enriched_positions,
@@ -666,6 +676,7 @@ def build_history(current: dict, snapshots: list[dict]):
         "lookbacksHours": LOOKBACKS_H,
         "benchmarks": benchmarks,
         "day0": day0_info,
+        "lookbackTotals": lookback_totals,
     }
 
 
@@ -1313,17 +1324,12 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
   });
 
   // Totals row — time-series coloring same logic
-  var tvals=L.map(function(h){
-    var s=0,any=false;
-    D.positions.forEach(function(p){var hh=p.history&&p.history[String(h)];if(hh&&!hh.absent&&hh.net!=null){s+=hh.net;any=true;}});
-    sW.forEach(function(w){var hh=w.history&&w.history[String(h)];if(hh&&!hh.absent&&hh.usd!=null){s+=hh.usd;any=true;}});
-    return any?s:null;
-  });
-  // Day 0 total — sum positions + wallet from d0 entries (matches Starting Capital exactly)
-  var tD0=0,tD0any=false;
-  D.positions.forEach(function(p){var hh=p.history&&p.history.d0;if(hh&&!hh.absent&&hh.net!=null){tD0+=hh.net;tD0any=true;}});
-  sW.forEach(function(w){var hh=w.history&&w.history.d0;if(hh&&!hh.absent&&hh.usd!=null){tD0+=hh.usd;tD0any=true;}});
-  var tD0val=tD0any?(D.day0&&D.day0.net_pos)||tD0:null;  // prefer reportedTotal from day0 to avoid rounding drift
+  // Total equity per column: use the snapshot's actual reportedTotal so wallet
+  // tokens that moved into positions (or vice versa) don't create phantom dips.
+  var LT=D.lookbackTotals||{};
+  var tvals=L.map(function(h){return LT[String(h)]!=null?LT[String(h)]:null;});
+  // Day 0 total — use stored reportedTotal from day0 snapshot
+  var tD0val=(D.day0&&D.day0.net_pos)||LT['d0']||null;
   var tOldest=-1;for(var ti=tvals.length-1;ti>=0;ti--){if(tvals[ti]!=null){tOldest=ti;break;}}
   var tNowCls='now-cell '+dirCls(totalEquity,tvals[0],'asset');
   var tc=tvals.map(function(val,i){
