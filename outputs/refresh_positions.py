@@ -451,13 +451,12 @@ def parse_captured(s: str) -> datetime:
 
 
 def find_lookback_snapshot(snapshots: list[dict], current_t: datetime, hours: int):
-    """Given list of snapshots (sorted asc) and the current time, find the snapshot
-    closest to (current_t - hours), within ±hours/2 tolerance.
-    Returns (snapshot_dict, hours_ago_actual) or (None, None) if no snapshot falls
-    within the tolerance window — columns only populate when real data exists for
-    that time period, and fill in rightward automatically over time."""
+    """Find the snapshot closest to (current_t - hours).
+    No tolerance window — always returns the nearest available snapshot so
+    columns never show a blank gap just because GH Actions ran slightly off-schedule.
+    Deduplication in build_history() ensures the same snapshot can't fill two columns.
+    Returns (snapshot_dict, hours_ago_actual) or (None, None) if pool is empty."""
     target = current_t - timedelta(hours=hours)
-    tolerance = timedelta(hours=hours / 2 + 1)   # +1h buffer so GH Actions drift doesn't blank a column
     best = None
     best_dist = None
     for s in snapshots:
@@ -466,7 +465,7 @@ def find_lookback_snapshot(snapshots: list[dict], current_t: datetime, hours: in
         except (ValueError, KeyError):
             continue
         dist = abs(t - target)
-        if dist <= tolerance and (best_dist is None or dist < best_dist):
+        if best_dist is None or dist < best_dist:
             best = s
             best_dist = dist
     if best is None:
