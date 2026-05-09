@@ -1,13 +1,13 @@
 {
   "wallet": "0xe16be042f9433779909a972669be3a2003956348",
-  "capturedAt": "2026-05-09 17:35:32",
+  "capturedAt": "2026-05-09 17:36:09",
   "source": "Rabby API + Jupiter",
-  "reportedTotal": 631874.8559218975,
+  "reportedTotal": 546127.1453612947,
   "totals": {
-    "sup": 2953023.2555776997,
+    "sup": 2867276.175183632,
     "bor": 2321294.960318855,
-    "net": 631728.2952588447,
-    "count": 16,
+    "net": 545981.2148647769,
+    "count": 15,
     "lowest_hr": 1.038,
     "walletTokensTotal": 0
   },
@@ -79,7 +79,7 @@
         {
           "token": "sfrxUSD",
           "amount": 275773.43553,
-          "usd": 329084.0117481222
+          "usd": 329084.4812504932
         }
       ],
       "borrowed": [
@@ -90,10 +90,10 @@
         }
       ],
       "description": "",
-      "supSum": 329084.0117481222,
+      "supSum": 329084.4812504932,
       "borSum": 306662.05112328933,
       "rewSum": 0,
-      "net": 22421.960624832893,
+      "net": 22422.430127203872,
       "poolId": "0x3de37c38739dfb83b7a902842bf5393040f7bf50"
     },
     {
@@ -125,28 +125,6 @@
       "poolId": "0xb536fea3a01c95dd09932440ec802a75410139d6"
     },
     {
-      "protocol": "Maple",
-      "chain": "Ethereum",
-      "chainId": "eth",
-      "type": "Yield",
-      "rabbyType": "Yield",
-      "healthRate": null,
-      "supplied": [
-        {
-          "token": "USDT",
-          "amount": 85764.693779,
-          "usd": 85747.5408402442
-        }
-      ],
-      "borrowed": [],
-      "description": "Syrup USDT",
-      "supSum": 85747.5408402442,
-      "borSum": 0,
-      "rewSum": 0,
-      "net": 85747.5408402442,
-      "poolId": "0x356b8d89c1e1239cbbb9de4815c39a1474d5ba7d"
-    },
-    {
       "protocol": "Aave V3",
       "chain": "Mantle",
       "chainId": "mnt",
@@ -157,7 +135,7 @@
         {
           "token": "WMNT",
           "amount": 39.895129146671614,
-          "usd": 27.37041240723638
+          "usd": 27.361356212920086
         },
         {
           "token": "syrupUSDT",
@@ -183,10 +161,10 @@
         }
       ],
       "description": "",
-      "supSum": 77802.29718495213,
+      "supSum": 77802.2881287578,
       "borSum": 68087.29430039928,
       "rewSum": 0,
-      "net": 9715.002884552843,
+      "net": 9714.993828358522,
       "poolId": "0x458f293454fe0d67ec0655f3672301301dd51422"
     },
     {
