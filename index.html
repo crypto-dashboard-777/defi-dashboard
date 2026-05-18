@@ -331,14 +331,6 @@ h1{font-size:18px;font-weight:800;letter-spacing:-.04em;color:var(--text)}
 /* ── Day 0 column ── */
 th.d0-hdr{color:var(--amber)!important;border-left:1px solid var(--border-2)!important;}
 td.d0-col{border-left:1px solid var(--border-2)!important;color:rgba(255,255,255,0.45)!important;font-style:italic}
-
-/* ── Long-term column states ── */
-/* col-young: 7d/14d header where we have data but not a full window */
-th.col-young{border-left:1px solid rgba(251,191,36,.25)!important;}
-th.col-young .col-approx{color:var(--amber);font-size:9px;font-weight:700;letter-spacing:.04em;cursor:help}
-/* col-empty: 7d/14d header where there's no data at all */
-th.col-empty{opacity:.4}
-th.col-empty .col-no-data{font-size:8px;font-weight:600;letter-spacing:.05em;color:var(--muted-2)}
 </style>
 </head>
 <body>
@@ -392,7 +384,7 @@ th.col-empty .col-no-data{font-size:8px;font-weight:600;letter-spacing:.05em;col
   </div>
 </div>
 <table class="tbl">
-  <thead><tr><th>Token / Position</th><th class="now-hdr">Balance</th><th class="lh-hdr" data-h="12"></th><th class="lh-hdr" data-h="24"></th><th class="lh-hdr" data-h="36"></th><th class="lh-hdr" data-h="48"></th><th class="lh-hdr" data-h="168"></th><th class="lh-hdr" data-h="336"></th><th class="d0-hdr">Day 0</th></tr></thead>
+  <thead><tr><th>Token / Position</th><th class="now-hdr">Balance</th><th>12h</th><th>24h</th><th>36h</th><th>48h</th><th>7d</th><th>14d</th><th class="d0-hdr">Day 0</th></tr></thead>
   <tbody id="tbody"></tbody>
 </table>
 <div id="closed"></div>
@@ -406,34 +398,6 @@ th.col-empty .col-no-data{font-size:8px;font-weight:600;letter-spacing:.05em;col
 (function(){
   var D=JSON.parse(document.getElementById('payload').textContent);
   var L=D.lookbacksHours||[12,24,36,48,168,336];
-  var LA=D.lookbackActualHours||{};
-
-  // ── Column header labels (show real age when tracking window is too short) ──
-  // For short-term cols (≤48h) always use the nominal label.
-  // For long-term cols (7d / 14d) show actual age if it's <80% of the target,
-  // and style it amber so the user knows the column isn't a full window.
-  function colLabel(h){
-    var actual=LA[String(h)];
-    if(actual==null) return h>=168 ? '<span class="col-no-data">no data</span>' : (h+'h');
-    if(h<=48) return h+'h';
-    var nomDays=h/24;
-    var actDays=actual/24;
-    var short=actual < h*0.8;
-    if(short){
-      var label=actDays<2?(Math.round(actual)+'h'):(actDays.toFixed(1)+'d');
-      return '<span class="col-approx" title="Tracking started '+
-        (new Date(D.earliestSnapshotAt)).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+
-        ' — only '+label+' of history available">~'+label+'</span>';
-    }
-    return nomDays+'d';
-  }
-  document.querySelectorAll('th.lh-hdr[data-h]').forEach(function(th){
-    var h=parseInt(th.getAttribute('data-h'),10);
-    var actual=LA[String(h)];
-    th.innerHTML=colLabel(h);
-    if(h>=168 && actual!=null && actual < h*0.8) th.classList.add('col-young');
-    if(h>=168 && actual==null) th.classList.add('col-empty');
-  });
 
   function fmtUsd(n,dec){
     if(n==null)return'—';
