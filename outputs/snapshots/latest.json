@@ -1,15 +1,15 @@
 {
   "wallet": "0xe16be042f9433779909a972669be3a2003956348",
-  "capturedAt": "2026-05-20 21:12:10",
+  "capturedAt": "2026-05-20 21:13:08",
   "source": "Rabby API + Jupiter",
-  "reportedTotal": 633481.7317138913,
+  "reportedTotal": 633494.9734308246,
   "totals": {
-    "sup": 3503133.404768117,
+    "sup": 3503131.1488256585,
     "bor": 2971357.1689479523,
-    "net": 531776.2358201644,
+    "net": 531773.9798777062,
     "count": 19,
     "lowest_hr": 1.028,
-    "walletTokensTotal": 101512.6378204148
+    "walletTokensTotal": 31941.54002076896
   },
   "positions": [
     {
@@ -185,7 +185,7 @@
         {
           "token": "WMNT",
           "amount": 12.885817273657464,
-          "usd": 8.48199901966411
+          "usd": 8.487179118208122
         },
         {
           "token": "syrupUSDT",
@@ -201,10 +201,10 @@
         }
       ],
       "description": "",
-      "supSum": 78069.36900753077,
+      "supSum": 78069.3741876293,
       "borSum": 69127.99809747799,
       "rewSum": 0,
-      "net": 8941.370910052778,
+      "net": 8941.376090151316,
       "poolId": "0x458f293454fe0d67ec0655f3672301301dd51422"
     },
     {
@@ -358,7 +358,7 @@
         {
           "token": "wsrUSD",
           "amount": 173196.90000764522,
-          "usd": 187305.59042606334
+          "usd": 187303.3293035065
         }
       ],
       "borrowed": [
@@ -369,10 +369,10 @@
         }
       ],
       "description": "",
-      "supSum": 187305.59042606334,
+      "supSum": 187303.3293035065,
       "borSum": 162813.0652798807,
       "rewSum": 0,
-      "net": 24492.525146182626,
+      "net": 24490.264023625787,
       "poolId": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending"
     },
     {
@@ -545,14 +545,6 @@
     {
       "chain": "Ethereum",
       "chainId": "eth",
-      "token": "USDC",
-      "id": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      "amount": 69515.346551,
-      "usd": 69571.00335368294
-    },
-    {
-      "chain": "Ethereum",
-      "chainId": "eth",
       "token": "USDT",
       "id": "0xdac17f958d2ee523a2206206994597c13d831ec7",
       "amount": 31889.98642,
@@ -564,7 +556,7 @@
       "token": "WXPL",
       "id": "0x6100e367285b01f48d07953803a2d8dca5d19873",
       "amount": 944.4596291052696,
-      "usd": 82.26243369506898
+      "usd": 82.16798773215845
     }
   ]
 }
