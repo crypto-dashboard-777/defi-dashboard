@@ -44,6 +44,15 @@ SOL_MINT = "So11111111111111111111111111111111111111112"
 TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
 
+# Token symbol overrides — Rabby sometimes returns raw contract slugs instead of
+# human-readable names. Add entries here as needed.
+TOKEN_RENAME = {
+    "AVZZF1": "syrupUSDC",   # Maple syrupUSDC on Solana (AvZZF1YaZDziPY2RCK4oJrRVrbN3mTD9NL24hPeaZeUj)
+}
+
+def rename_token(symbol: str) -> str:
+    return TOKEN_RENAME.get(symbol, symbol)
+
 # Rabby chain IDs → human-readable display names
 CHAIN_NAMES = {
     "eth": "Ethereum", "arb": "Arbitrum", "op": "Optimism", "matic": "Polygon",
@@ -151,7 +160,7 @@ def wallet_tokens(tokens, position_token_ids: set, min_usd: float = FILTER_USD) 
         out.append({
             "chain": chain_display(chain),
             "chainId": chain,
-            "token": t.get("symbol") or t.get("optimized_symbol") or t.get("display_symbol") or "?",
+            "token": rename_token(t.get("symbol") or t.get("optimized_symbol") or t.get("display_symbol") or "?"),
             "id": tid,
             "amount": amount,
             "usd": usd,
@@ -186,17 +195,17 @@ def normalize(rabby_data) -> list[dict]:
                     sup_toks = generic
 
             supplied = [{
-                "token": t.get("symbol") or t.get("optimized_symbol") or "?",
+                "token": rename_token(t.get("symbol") or t.get("optimized_symbol") or "?"),
                 "amount": float(t.get("amount") or 0),
                 "usd": float(usd_of(t)),
             } for t in sup_toks if usd_of(t) >= 0.01]
             borrowed = [{
-                "token": t.get("symbol") or t.get("optimized_symbol") or "?",
+                "token": rename_token(t.get("symbol") or t.get("optimized_symbol") or "?"),
                 "amount": float(t.get("amount") or 0),
                 "usd": float(usd_of(t)),
             } for t in bor_toks if usd_of(t) >= 0.01]
             rewards = [{
-                "token": t.get("symbol") or t.get("optimized_symbol") or "?",
+                "token": rename_token(t.get("symbol") or t.get("optimized_symbol") or "?"),
                 "amount": float(t.get("amount") or 0),
                 "usd": float(usd_of(t)),
             } for t in rew_toks if usd_of(t) >= 0.01]
@@ -251,12 +260,24 @@ def keep(p: dict) -> bool:
 def position_key(p: dict) -> str:
     """Stable, unique-per-market key including supply+borrow token signature.
     Works on both raw (with _poolId/_supSum) and rendered (with poolId/supSum) dicts.
+
+    Key design:
+    - When a real poolId is present it already encodes the market (token pair +
+      chain) at the protocol level, so we use protocol|pool only.  This makes
+      keys stable across chain migrations (Fluid Plasma→Arbitrum) and token
+      renames/renamings, and eliminates casing sensitivity (ONyc vs ONYC).
+    - When no poolId exists (legacy / simple protocols) we fall back to
+      protocol|chainId|sup_syms|bor_syms with symbols uppercased so casing
+      flips don't break continuity.
     """
-    pool = (p.get("_poolId") or p.get("poolId") or "")
-    pool = pool[:14] if pool else "nopool"
-    sup_syms = "+".join(sorted({l["token"] for l in p.get("supplied", [])})) or "none"
-    bor_syms = "+".join(sorted({l["token"] for l in p.get("borrowed", [])})) or "none"
-    return f"{p['protocol'].replace(' ', '')}|{p.get('chainId','?')}|{pool}|{sup_syms}|{bor_syms}"
+    raw_pool = (p.get("_poolId") or p.get("poolId") or "").strip()
+    has_pool = bool(raw_pool)
+    if has_pool:
+        pool = raw_pool[:14]
+        return f"{p['protocol'].replace(' ', '')}|{pool}"
+    sup_syms = "+".join(sorted({l["token"].upper() for l in p.get("supplied", [])})) or "none"
+    bor_syms = "+".join(sorted({l["token"].upper() for l in p.get("borrowed", [])})) or "none"
+    return f"{p['protocol'].replace(' ', '')}|{p.get('chainId','?')}|nopool|{sup_syms}|{bor_syms}"
 
 
 def position_id(p: dict) -> str:
@@ -666,6 +687,14 @@ def build_history(current: dict, snapshots: list[dict]):
     # Day 0 column total
     lookback_totals["d0"] = round(_d0_snap["reportedTotal"], 2) if _d0_snap else None
 
+    # Actual hours of the snapshot used for each lookback column.
+    # JS uses this to show the real age (e.g. "4.2d") instead of the nominal
+    # label ("7d") when we haven't been tracking long enough yet.
+    lookback_actual_hours = {}
+    for h in LOOKBACKS_H:
+        snap, hago = _lookback_map[h]
+        lookback_actual_hours[str(h)] = round(hago, 1) if snap is not None else None
+
     return {
         **current,
         "positions": enriched_positions,
@@ -674,6 +703,7 @@ def build_history(current: dict, snapshots: list[dict]):
         "snapshotCount": len(snapshots),
         "earliestSnapshotAt": snapshots[0]["capturedAt"] if snapshots else current["capturedAt"],
         "lookbacksHours": LOOKBACKS_H,
+        "lookbackActualHours": lookback_actual_hours,
         "benchmarks": benchmarks,
         "day0": day0_info,
         "lookbackTotals": lookback_totals,
@@ -1049,6 +1079,14 @@ EXTRA_CSS = """
 /* ── Day 0 column ── */
 th.d0-hdr{color:var(--amber)!important;border-left:1px solid var(--border-2)!important;}
 td.d0-col{border-left:1px solid var(--border-2)!important;color:rgba(255,255,255,0.45)!important;font-style:italic}
+
+/* ── Long-term column states ── */
+/* col-young: 7d/14d header where we have data but not a full window */
+th.col-young{border-left:1px solid rgba(251,191,36,.25)!important;}
+th.col-young .col-approx{color:var(--amber);font-size:9px;font-weight:700;letter-spacing:.04em;cursor:help}
+/* col-empty: 7d/14d header where there's no data at all */
+th.col-empty{opacity:.4}
+th.col-empty .col-no-data{font-size:8px;font-weight:600;letter-spacing:.05em;color:var(--muted-2)}
 """
 
 
@@ -1057,13 +1095,41 @@ def render_dashboard_html(enriched: dict, generated_at: str) -> str:
     import json as _json
     payload_json = _json.dumps(enriched, separators=(",", ":"), default=str)
     payload_safe = payload_json.replace("</", "<\\/")
-    # Column headers — compact labels
-    lh_hdrs = "".join(f'<th>{_lh_label(h)}</th>' for h in LOOKBACKS_H) + '<th class="d0-hdr">Day 0</th>'
+    # Column headers — built dynamically in JS using actual snapshot ages
+    lh_hdrs = "".join(f'<th class="lh-hdr" data-h="{h}"></th>' for h in LOOKBACKS_H) + '<th class="d0-hdr">Day 0</th>'
 
     js = """
 (function(){
   var D=JSON.parse(document.getElementById('payload').textContent);
   var L=D.lookbacksHours||[12,24,36,48,168,336];
+  var LA=D.lookbackActualHours||{};
+
+  // ── Column header labels (show real age when tracking window is too short) ──
+  // For short-term cols (≤48h) always use the nominal label.
+  // For long-term cols (7d / 14d) show actual age if it's <80% of the target,
+  // and style it amber so the user knows the column isn't a full window.
+  function colLabel(h){
+    var actual=LA[String(h)];
+    if(actual==null) return h>=168 ? '<span class="col-no-data">no data</span>' : (h+'h');
+    if(h<=48) return h+'h';
+    var nomDays=h/24;
+    var actDays=actual/24;
+    var short=actual < h*0.8;
+    if(short){
+      var label=actDays<2?(Math.round(actual)+'h'):(actDays.toFixed(1)+'d');
+      return '<span class="col-approx" title="Tracking started '+
+        (new Date(D.earliestSnapshotAt)).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+
+        ' — only '+label+' of history available">~'+label+'</span>';
+    }
+    return nomDays+'d';
+  }
+  document.querySelectorAll('th.lh-hdr[data-h]').forEach(function(th){
+    var h=parseInt(th.getAttribute('data-h'),10);
+    var actual=LA[String(h)];
+    th.innerHTML=colLabel(h);
+    if(h>=168 && actual!=null && actual < h*0.8) th.classList.add('col-young');
+    if(h>=168 && actual==null) th.classList.add('col-empty');
+  });
 
   function fmtUsd(n,dec){
     if(n==null)return'—';
@@ -1786,8 +1852,9 @@ KNOWN_SOL_MINTS: dict[str, dict] = {
     "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": {"symbol": "USDC",  "decimals": 6},
     "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB":  {"symbol": "USDT",  "decimals": 6},
     "So11111111111111111111111111111111111111112":    {"symbol": "SOL",   "decimals": 9},
-    "5Y8NV33Vv7WbnLfq3zBcKSdYPrk7g2KoiQoe7M2tcxp5": {"symbol": "ONyc",  "decimals": 9},
-    "3b8X44fLF9ooXaUm3hhSgjpmVs6rZZ3pPoGnGahc3Uu7": {"symbol": "PRIME", "decimals": 6},
+    "5Y8NV33Vv7WbnLfq3zBcKSdYPrk7g2KoiQoe7M2tcxp5": {"symbol": "ONYC",      "decimals": 9},
+    "3b8X44fLF9ooXaUm3hhSgjpmVs6rZZ3pPoGnGahc3Uu7": {"symbol": "PRIME",     "decimals": 6},
+    "AvZZF1YaZDziPY2RCK4oJrRVrbN3mTD9NL24hPeaZeUj": {"symbol": "syrupUSDC", "decimals": 6},
 }
 
 
@@ -1873,8 +1940,18 @@ def loopscale_positions(meta: dict | None = None) -> tuple[list[dict], float]:
                            event_prices.get(col_mint) or 0.0)
 
         # Symbols: known-mints table → Jupiter meta → mint abbreviation
-        prin_sym = ((KNOWN_SOL_MINTS.get(prin_mint) or meta.get(prin_mint) or {}).get("symbol") or "USDC").upper()
-        col_sym  = ((KNOWN_SOL_MINTS.get(col_mint)  or meta.get(col_mint)  or {}).get("symbol") or col_mint[:6]).upper()
+        # KNOWN_SOL_MINTS entries preserve exact casing (e.g. "syrupUSDC"); only
+        # fall through to .upper() when the symbol comes from Jupiter meta.
+        def _sym(mint, fallback):
+            known = KNOWN_SOL_MINTS.get(mint)
+            if known:
+                return known.get("symbol") or fallback
+            jup = meta.get(mint)
+            if jup:
+                return (jup.get("symbol") or fallback).upper()
+            return fallback.upper()
+        prin_sym = _sym(prin_mint, "USDC")
+        col_sym  = _sym(col_mint,  col_mint[:6])
 
         # USD amounts — fall back to server-computed values if token prices failed
         prin_amount = prin_raw / (10 ** prin_dec)
@@ -2083,6 +2160,14 @@ def main():
         combined_total = totals["net"] + sol_net_worth
     else:
         combined_total = reported_total
+
+    # Off-chain capital adjustment — set OFFCHAIN_USD env var when funds are
+    # temporarily moved off-chain to prevent aberrations in the dashboard.
+    # e.g. export OFFCHAIN_USD=65567 in refresh_and_push.sh
+    offchain = float(os.environ.get("OFFCHAIN_USD") or 0)
+    if offchain and combined_total is not None:
+        print(f"[refresh] Adding OFFCHAIN_USD=${offchain:,.2f} to reported total")
+        combined_total = combined_total + offchain
 
     xlsx_path = Path(args.xlsx)
     new_wb = append_to_xlsx(xlsx_path, snapshot_time, source_label, positions, totals, combined_total)
