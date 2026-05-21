@@ -262,20 +262,24 @@ def position_key(p: dict) -> str:
     Works on both raw (with _poolId/_supSum) and rendered (with poolId/supSum) dicts.
 
     Key design:
-    - When a real poolId is present it already encodes the market (token pair +
-      chain) at the protocol level, so we use protocol|pool only.  This makes
-      keys stable across chain migrations (Fluid Plasma→Arbitrum) and token
-      renames/renamings, and eliminates casing sensitivity (ONyc vs ONYC).
-    - When no poolId exists (legacy / simple protocols) we fall back to
-      protocol|chainId|sup_syms|bor_syms with symbols uppercased so casing
-      flips don't break continuity.
+    - Token symbols are always uppercased to survive casing flips (ONyc→ONYC).
+    - Supply tokens only (not borrow) are used for disambiguation: the supply
+      token uniquely identifies a position within a protocol/pool, and excluding
+      borrow tokens makes keys survive borrow-token changes on chain migrations
+      (e.g. Fluid Plasma USDT0 → Arbitrum USDC with same poolId and collateral).
+    - chainId is included only when poolId is absent, since poolId is already
+      chain-specific at the protocol level.
+    - Rabby returns the same vault-level poolId for all positions within a
+      protocol (e.g. all Morpho markets share one vault address), so poolId
+      alone never suffices — supply tokens are always needed.
     """
     raw_pool = (p.get("_poolId") or p.get("poolId") or "").strip()
     has_pool = bool(raw_pool)
-    if has_pool:
-        pool = raw_pool[:14]
-        return f"{p['protocol'].replace(' ', '')}|{pool}"
+    pool = raw_pool[:14] if has_pool else "nopool"
     sup_syms = "+".join(sorted({l["token"].upper() for l in p.get("supplied", [])})) or "none"
+    if has_pool:
+        # Drop chainId — poolId is protocol-level chain-specific already
+        return f"{p['protocol'].replace(' ', '')}|{pool}|{sup_syms}"
     bor_syms = "+".join(sorted({l["token"].upper() for l in p.get("borrowed", [])})) or "none"
     return f"{p['protocol'].replace(' ', '')}|{p.get('chainId','?')}|nopool|{sup_syms}|{bor_syms}"
 
