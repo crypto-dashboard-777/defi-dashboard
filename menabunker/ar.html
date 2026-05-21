@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MENA Bunker — ملاجئ مقاومة للانفجار، تصميماً وتنفيذاً</title>
+  <meta name="description" content="نصمّم وننفّذ الملاجئ المقاومة للانفجارات في الشرق الأوسط وشمال أفريقيا — داخل المباني القائمة أو من الصفر." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080c18;
+      --bg2:       #0e1428;
+      --bg3:       #141b35;
+      --gold:      #c8a96e;
+      --gold-lt:   #e2c98a;
+      --text:      #dde3f0;
+      --text-muted:#8a95b0;
+      --border:    rgba(200,169,110,0.2);
+      --radius:    8px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      font-size: 17px;
+      line-height: 1.7;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 6%;
+      height: 68px;
+      background: rgba(8,12,24,0.93);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .nav-logo-text {
+      font-family: 'Cairo', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0;
+      direction: ltr;
+    }
+
+    .nav-logo-text span { color: var(--text); font-weight: 300; }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 2rem;
+    }
+
+    nav ul a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    nav ul a:hover { color: var(--gold); }
+
+    .lang-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      direction: ltr;
+    }
+
+    .lang-toggle a {
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.3rem 0.6rem;
+      text-decoration: none;
+      color: var(--text-muted);
+      transition: background 0.15s, color 0.15s;
+      font-family: 'Cairo', sans-serif;
+    }
+
+    .lang-toggle a.active {
+      background: rgba(200,169,110,0.15);
+      color: var(--gold);
+    }
+
+    .lang-toggle a:not(.active):hover { color: var(--text); }
+
+    .nav-cta {
+      background: var(--gold);
+      color: #080c18;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.5rem 1.25rem;
+      border-radius: var(--radius);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.2s;
+      font-family: 'Cairo', sans-serif;
+    }
+
+    .nav-cta:hover { background: var(--gold-lt); }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 120px 6% 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 60% at 30% 40%, rgba(200,169,110,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 85% 75%, rgba(30,50,120,0.22) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* grid lines on left side for RTL */
+    #hero::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 50%;
+      height: 100%;
+      background-image:
+        linear-gradient(rgba(200,169,110,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200,169,110,0.035) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: linear-gradient(to right, rgba(0,0,0,0.5), transparent);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      max-width: 680px;
+      z-index: 1;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--gold);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.9rem;
+      border-radius: 50px;
+      margin-bottom: 1.75rem;
+    }
+
+    h1 {
+      font-family: 'Cairo', sans-serif;
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      font-weight: 900;
+      line-height: 1.2;
+      color: #fff;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 em { font-style: normal; color: var(--gold); }
+
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 580px;
+      margin-bottom: 2.5rem;
+      line-height: 1.9;
+      font-weight: 400;
+    }
+
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--gold);
+      color: #080c18;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 0.9rem 2rem;
+      border-radius: var(--radius);
+      text-decoration: none;
+      font-family: 'Cairo', sans-serif;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .btn-primary:hover { background: var(--gold-lt); transform: translateY(-1px); }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: transparent;
+      color: var(--text);
+      font-weight: 500;
+      font-size: 0.95rem;
+      padding: 0.9rem 2rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      font-family: 'Cairo', sans-serif;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+    .hero-stats {
+      display: flex;
+      gap: 3rem;
+      margin-top: 4rem;
+      padding-top: 2.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .hero-stat-num {
+      font-family: 'Cairo', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--gold);
+    }
+
+    .hero-stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    /* ── SECTION SHARED ── */
+    section { padding: 100px 6%; }
+
+    .section-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--gold);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-family: 'Cairo', sans-serif;
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.25;
+      margin-bottom: 1rem;
+    }
+
+    .section-sub {
+      font-size: 1rem;
+      color: var(--text-muted);
+      max-width: 560px;
+      line-height: 1.85;
+    }
+
+    .section-head { margin-bottom: 4rem; }
+
+    /* ── WHAT WE BUILD ── */
+    #build { background: var(--bg2); }
+
+    .build-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .build-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .build-card:hover { border-color: var(--gold); transform: translateY(-3px); }
+
+    .build-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(270deg, var(--gold), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .build-card:hover::after { opacity: 1; }
+
+    .build-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(200,169,110,0.08);
+      border: 1px solid rgba(200,169,110,0.15);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.2rem;
+    }
+
+    .build-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.6rem;
+    }
+
+    .build-card p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.8; }
+
+    /* ── SERVICES ── */
+    #services { background: var(--bg); }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .service-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.25rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .service-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(270deg, var(--gold), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .service-card:hover { border-color: var(--gold); }
+    .service-card:hover::before { opacity: 1; }
+
+    .service-num {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 1rem;
+      direction: ltr;
+      text-align: right;
+    }
+
+    .service-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+
+    .service-card p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.8; margin-bottom: 1.25rem; }
+
+    .service-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .service-list li {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      padding-right: 1.1rem;
+      position: relative;
+    }
+
+    .service-list li::before {
+      content: '‹';
+      position: absolute;
+      right: 0;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    /* ── WHY US ── */
+    #why { background: var(--bg2); }
+
+    .why-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+
+    .why-text h2 {
+      font-family: 'Cairo', sans-serif;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.25;
+      margin-bottom: 1.25rem;
+    }
+
+    .why-text p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.9;
+      margin-bottom: 1rem;
+    }
+
+    .why-text p strong { color: var(--text); }
+
+    .why-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .why-list li {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .why-list-icon {
+      width: 38px;
+      height: 38px;
+      background: rgba(200,169,110,0.08);
+      border: 1px solid rgba(200,169,110,0.15);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .why-list-body strong {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.2rem;
+    }
+
+    .why-list-body span { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; }
+
+    .why-visual {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.25rem;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .stat-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .stat-box-num {
+      font-family: 'Cairo', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--gold);
+      line-height: 1;
+      margin-bottom: 0.4rem;
+      direction: ltr;
+    }
+
+    .stat-box-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .cert-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .cert-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.7rem 1rem;
+    }
+
+    .cert-dot {
+      width: 7px; height: 7px;
+      background: var(--gold);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── PROCESS ── */
+    #process { background: var(--bg); }
+
+    .process-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0;
+      position: relative;
+    }
+
+    .process-steps::before {
+      content: '';
+      position: absolute;
+      top: 28px;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), var(--border), transparent);
+    }
+
+    .step { text-align: center; padding: 0 1.5rem 2rem; position: relative; }
+
+    .step-num {
+      width: 56px;
+      height: 56px;
+      background: var(--bg3);
+      border: 2px solid var(--gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cairo', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--gold);
+      margin: 0 auto 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step h3 { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+    .step p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.7; }
+
+    /* ── CONTACT ── */
+    #contact { background: var(--bg2); }
+
+    .contact-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 5rem;
+      align-items: start;
+    }
+
+    .contact-info h2 {
+      font-family: 'Cairo', sans-serif;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.25;
+      margin-bottom: 1rem;
+    }
+
+    .contact-info p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.9;
+      margin-bottom: 2rem;
+    }
+
+    .contact-detail {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .contact-detail-icon {
+      width: 36px; height: 36px;
+      background: rgba(200,169,110,0.08);
+      border: 1px solid rgba(200,169,110,0.15);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    form {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-family: 'Cairo', sans-serif;
+    }
+
+    input, select, textarea {
+      background: var(--bg2);
+      border: 1px solid rgba(200,169,110,0.15);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.95rem;
+      padding: 0.75rem 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+      text-align: right;
+    }
+
+    input::placeholder, textarea::placeholder { color: rgba(138,149,176,0.45); }
+    input:focus, select:focus, textarea:focus { border-color: var(--gold); }
+    select { cursor: pointer; appearance: none; }
+    textarea { resize: vertical; min-height: 120px; }
+
+    .form-submit {
+      width: 100%;
+      background: var(--gold);
+      color: #080c18;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Cairo', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      margin-top: 0.25rem;
+    }
+
+    .form-submit:hover { background: var(--gold-lt); transform: translateY(-1px); }
+    .form-submit:active { transform: translateY(0); }
+    .form-note { font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 1rem; }
+
+    .form-success { display: none; text-align: center; padding: 3rem 2rem; }
+    .form-success-icon { margin-bottom: 1rem; }
+    .form-success h3 { font-size: 1.3rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+    .form-success p { font-size: 0.9rem; color: var(--text-muted); }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 6%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+    }
+
+    .footer-logo-text {
+      font-family: 'Cairo', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--gold);
+      direction: ltr;
+    }
+
+    .footer-logo-text span { color: var(--text-muted); font-weight: 300; }
+    footer p { font-size: 0.82rem; color: var(--text-muted); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1000px) {
+      .why-split { grid-template-columns: 1fr; gap: 3rem; }
+      .contact-wrap { grid-template-columns: 1fr; gap: 3rem; }
+    }
+
+    @media (max-width: 768px) {
+      nav ul { display: none; }
+      .hero-stats { gap: 1.5rem; flex-wrap: wrap; }
+      .form-row { grid-template-columns: 1fr; }
+      .process-steps::before { display: none; }
+      footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#hero" class="nav-logo">
+    <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+      <rect width="34" height="34" rx="7" fill="rgba(200,169,110,0.1)"/>
+      <path d="M7 25 L7 16 Q7 8 17 8 Q27 8 27 16 L27 25" stroke="#c8a96e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <line x1="5" y1="25" x2="29" y2="25" stroke="#c8a96e" stroke-width="2" stroke-linecap="round"/>
+      <path d="M14 25 L14 20 Q14 17.5 17 17.5 Q20 17.5 20 20 L20 25" stroke="#c8a96e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+    <span class="nav-logo-text">MENA<span>Bunker</span></span>
+  </a>
+  <div class="nav-right">
+    <ul>
+      <li><a href="#build">ما نبنيه</a></li>
+      <li><a href="#services">خدماتنا</a></li>
+      <li><a href="#why">لماذا نحن</a></li>
+    </ul>
+    <div class="lang-toggle">
+      <a href="index.html">EN</a>
+      <a href="ar.html" class="active">عربي</a>
+    </div>
+    <a href="#contact" class="nav-cta">احصل على عرض سعر</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-inner">
+    <span class="hero-tag">هندسة الملاجئ — الشرق الأوسط وشمال أفريقيا</span>
+    <h1>السلامة<br><em>مُهندَسة.</em><br>الملاجئ مبنيّة.</h1>
+    <p class="hero-sub">
+      نصمّم وننفّذ الملاجئ المقاومة للانفجارات في جميع أنحاء الشرق الأوسط وشمال أفريقيا — داخل الشقق والمباني القائمة، في الطابق الأرضي، أو تحت الأرض بالكامل. بناء حقيقي، لا مجرد مخططات.
+    </p>
+    <div class="hero-actions">
+      <a href="#contact" class="btn-primary">← طلب استشارة</a>
+      <a href="#build" class="btn-secondary">ما الذي نبنيه</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-num">+15</div>
+        <div class="hero-stat-label">سنة خبرة</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">+200</div>
+        <div class="hero-stat-label">ملجأ منجز</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">24h</div>
+        <div class="hero-stat-label">وقت الاستجابة</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT WE BUILD -->
+<section id="build">
+  <div class="section-head">
+    <div class="section-tag">ما نبنيه</div>
+    <h2 class="section-title">كل موقع.<br>كل مبنى.</h2>
+    <p class="section-sub">نعمل بما تمتلكه — شقة، أو مبنى قائم، أو أرض مفتوحة. نفّذنا جميع هذه الحالات من قبل.</p>
+  </div>
+  <div class="build-grid">
+
+    <div class="build-card">
+      <div class="build-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="11" height="18" rx="1.5"/>
+          <line x1="5.5" y1="7" x2="8" y2="7"/>
+          <line x1="5.5" y1="11" x2="8" y2="11"/>
+          <line x1="5.5" y1="15" x2="8" y2="15"/>
+          <rect x="14" y="9" width="7" height="12" rx="1.5"/>
+        </svg>
+      </div>
+      <h3>غرف الأمان داخل الشقق</h3>
+      <p>غرفة مقاومة للانفجارات داخل شقتك الحالية. نعزّز الجدران والسقف وإطار الباب دون الحاجة إلى الانتقال أو الهدم.</p>
+    </div>
+
+    <div class="build-card">
+      <div class="build-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="1.5"/>
+          <line x1="2" y1="13.5" x2="22" y2="13.5"/>
+          <line x1="2" y1="17" x2="22" y2="17"/>
+          <line x1="6" y1="17" x2="6" y2="21"/>
+          <line x1="10" y1="17" x2="10" y2="21"/>
+          <line x1="14" y1="17" x2="14" y2="21"/>
+          <line x1="18" y1="17" x2="18" y2="21"/>
+          <line x1="2" y1="21" x2="22" y2="21"/>
+        </svg>
+      </div>
+      <h3>ملاجئ الطابق الأرضي</h3>
+      <p>ملاجئ متخصصة مقاومة للانفجارات في الطوابق الأرضية للمباني السكنية والتجارية. نقيّم الهيكل القائم ونبني حوله.</p>
+    </div>
+
+    <div class="build-card">
+      <div class="build-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="9" x2="23" y2="9"/>
+          <path d="M4 9 L4 14 Q4 21 12 21 Q20 21 20 14 L20 9" fill="rgba(200,169,110,0.06)"/>
+          <path d="M10 21 L10 18 Q10 16 12 16 Q14 16 14 18 L14 21"/>
+          <line x1="8" y1="5" x2="8" y2="3"/>
+          <line x1="12" y1="6" x2="12" y2="3"/>
+          <line x1="16" y1="5" x2="16" y2="3"/>
+        </svg>
+      </div>
+      <h3>الملاجئ تحت الأرض</h3>
+      <p>إنشاء ملاجئ كاملة تحت الأرض على أراضٍ مفتوحة أو تحت المباني القائمة — خرسانة مسلّحة، أبواب انفجارية، تهوية، كهرباء، ومياه.</p>
+    </div>
+
+    <div class="build-card">
+      <div class="build-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="5" width="12" height="15" rx="1.5"/>
+          <path d="M3 8 Q1 5 3.5 3"/>
+          <polyline points="2 3 3.5 3 3.5 4.5"/>
+          <path d="M21 16 Q23 19 20.5 21"/>
+          <polyline points="22 21 20.5 21 20.5 19.5"/>
+        </svg>
+      </div>
+      <h3>تحصين المباني القائمة</h3>
+      <p>نقوّي ما هو موجود بالفعل. الأقبية، السلالم، غرف التخزين — نقيّم المساحة وننفّذها كملجأ مطابق للمعايير.</p>
+    </div>
+
+    <div class="build-card">
+      <div class="build-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="7" width="9" height="14" rx="1.5"/>
+          <rect x="14" y="4" width="9" height="17" rx="1.5"/>
+          <line x1="10" y1="14" x2="14" y2="14"/>
+        </svg>
+      </div>
+      <h3>الملاجئ الجماعية ومتعددة الوحدات</h3>
+      <p>ملاجئ مشتركة لمجمعات الشقق والمجتمعات السكنية والمجمعات التجارية. مصمَّمة للطاقة الاستيعابية والوصول السريع.</p>
+    </div>
+
+    <div class="build-card">
+      <div class="build-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="11" width="20" height="10" rx="1"/>
+          <polyline points="12 3 2 11 22 11"/>
+          <line x1="5" y1="11" x2="5" y2="21"/>
+          <line x1="9" y1="11" x2="9" y2="21"/>
+          <line x1="15" y1="11" x2="15" y2="21"/>
+          <line x1="19" y1="11" x2="19" y2="21"/>
+        </svg>
+      </div>
+      <h3>المنشآت الحكومية والكبرى</h3>
+      <p>منشآت محصّنة واسعة النطاق للحكومات والقطاع الدفاعي والبنية التحتية الحيوية — توثيق كامل للمشروع وإشراف هندسي.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="section-head">
+    <div class="section-tag">خدماتنا</div>
+    <h2 class="section-title">من الاتصال الأول<br>إلى التسليم النهائي</h2>
+    <p class="section-sub">نقدّم الخدمة الكاملة — من حزمة التصميم التي تسلّمها لمقاولك، إلى التسليم الكامل حيث ندير كل شيء.</p>
+  </div>
+  <div class="services-grid">
+    <div class="service-card">
+      <div class="service-num">01 — التصميم</div>
+      <h3>حزمة الهندسة والتصميم</h3>
+      <p>رسومات معمارية وإنشائية كاملة، جاهزة للتقديم للجهات المعنية واستخدامها من قِبل المقاول.</p>
+      <ul class="service-list">
+        <li>تقييم الموقع ودراسة الجدوى</li>
+        <li>حسابات التعزيز الإنشائي</li>
+        <li>المخططات المعمارية والمقاطع</li>
+        <li>تحديد مستوى الحماية من الانفجار</li>
+        <li>تصميم التهوية والكهرباء والمرافق</li>
+        <li>وثائق طلب التصاريح</li>
+      </ul>
+    </div>
+    <div class="service-card">
+      <div class="service-num">02 — البناء</div>
+      <h3>إدارة البناء</h3>
+      <p>ندير عملية البناء مباشرة — تنسيق المقاولين المحليين وضمان تنفيذ كل تفصيل وفق المواصفات.</p>
+      <ul class="service-list">
+        <li>تنسيق المقاولين المحليين</li>
+        <li>تحديد المواد وتأمينها</li>
+        <li>إدارة الجدول الزمني للبناء</li>
+        <li>إشراف هندسي ميداني</li>
+        <li>فحوصات الجودة والامتثال</li>
+        <li>التسليم النهائي والشهادات</li>
+      </ul>
+    </div>
+    <div class="service-card">
+      <div class="service-num">03 — تسليم مفتاح بيد</div>
+      <h3>التسليم الكامل</h3>
+      <p>نتولّى كل شيء من البداية إلى النهاية — تصميم، تصاريح، بناء، تجهيز وتسليم. فريق واحد، عقد واحد، مسؤولية واحدة.</p>
+      <ul class="service-list">
+        <li>مسؤولية موحّدة</li>
+        <li>إدارة المشروع من أوله لآخره</li>
+        <li>التجهيز الداخلي: أسرّة، كهرباء، مياه، هواء</li>
+        <li>تأمين أبواب انفجارية وأنظمة دخول</li>
+        <li>إشراف عن بُعد وميدانياً</li>
+        <li>توثيق ما تم تنفيذه وضمان</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- WHY US -->
+<section id="why">
+  <div class="why-split">
+    <div class="why-text">
+      <div class="section-tag">لماذا MENA Bunker</div>
+      <h2>نبقى حتى<br>يكتمل العمل.</h2>
+      <p>
+        <strong>معظم الشركات تقدّم لك تصميماً ثم تنسحب.</strong> نحن لا نفعل ذلك. نبقى حتى يُبنى الملجأ ويُختبر ويكون جاهزاً لحماية من بداخله.
+      </p>
+      <p>
+        بنى مهندسونا ملاجئ داخل شقق في مناطق نزاعات نشطة، وعزّزوا أقبية لم تُصمَّم للحماية أصلاً، وسلّموا ملاجئ كاملة تحت الأرض في أوقات ضيّقة. نعرف ما يتطلّبه الأمر.
+      </p>
+      <ul class="why-list">
+        <li>
+          <div class="why-list-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="11" height="18" rx="1.5"/>
+              <rect x="14" y="9" width="7" height="12" rx="1.5"/>
+              <line x1="5.5" y1="7" x2="8" y2="7"/>
+              <line x1="5.5" y1="11" x2="8" y2="11"/>
+            </svg>
+          </div>
+          <div class="why-list-body">
+            <strong>يعمل داخل المباني القائمة</strong>
+            <span>شقق، مكاتب، أقبية — نبني بأي هيكل تمتلكه.</span>
+          </div>
+        </li>
+        <li>
+          <div class="why-list-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/>
+              <polyline points="12 7 12 12 15 14"/>
+            </svg>
+          </div>
+          <div class="why-list-body">
+            <strong>تعبئة سريعة</strong>
+            <span>من أول تواصل إلى بدء البناء في أسابيع. نفهم معنى الاستعجال.</span>
+          </div>
+        </li>
+        <li>
+          <div class="why-list-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="11" width="14" height="10" rx="2"/>
+              <path d="M8 11 L8 7 Q8 3 12 3 Q16 3 16 7 L16 11"/>
+              <circle cx="12" cy="16" r="1" fill="#c8a96e"/>
+            </svg>
+          </div>
+          <div class="why-list-body">
+            <strong>سرية تامة</strong>
+            <span>اتفاقية سرية منذ اليوم الأول. هويات العملاء ومواقع المشاريع لا تُكشَف أبداً.</span>
+          </div>
+        </li>
+        <li>
+          <div class="why-list-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2 L20 6 L20 12 Q20 18 12 22 Q4 18 4 12 L4 6 Z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+          </div>
+          <div class="why-list-body">
+            <strong>مهندسون إنشائيون معتمدون</strong>
+            <span>كل مشروع موقَّع من مهندسين إنشائيين ومعماريين مرخَّصين.</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="why-visual">
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-box-num">+200</div>
+          <div class="stat-box-label">ملجأ تم بناؤه</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-num">+15</div>
+          <div class="stat-box-label">سنة خبرة</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-num">6</div>
+          <div class="stat-box-label">دول تمت خدمتها</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-num">100%</div>
+          <div class="stat-box-label">مشاريع مكتملة</div>
+        </div>
+      </div>
+      <div class="cert-row">
+        <div class="cert-item"><div class="cert-dot"></div> مهندسون إنشائيون ومعماريون معتمدون</div>
+        <div class="cert-item"><div class="cert-dot"></div> خبرة في البناء في مناطق النزاعات النشطة</div>
+        <div class="cert-item"><div class="cert-dot"></div> يعمل داخل الشقق والمباني القائمة</div>
+        <div class="cert-item"><div class="cert-dot"></div> سرية تامة واتفاقية سرية عند الطلب</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="section-head" style="text-align:center;">
+    <div class="section-tag" style="text-align:center;">كيف يعمل هذا</div>
+    <h2 class="section-title">بسيط. سريع.</h2>
+    <p class="section-sub" style="max-width:480px; margin:0 auto;">نعلم أنه لا وقت لديك لأشهر من المفاوضات. عمليتنا مصمَّمة للانتقال بسرعة من أول تواصل إلى بدء الأعمال.</p>
+  </div>
+  <div class="process-steps">
+    <div class="step">
+      <div class="step-num">١</div>
+      <h3>أرسل استفساراً</h3>
+      <p>أخبرنا بموقعك والمبنى الذي تمتلكه ومستوى الحماية المطلوب. يستغرق دقيقتين.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">٢</div>
+      <h3>مكالمة تقييم</h3>
+      <p>مكالمة مباشرة مع كبير مهندسينا. نقيّم ما هو ممكن ونعطيك إجابة صريحة.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">٣</div>
+      <h3>عرض سعر محدد</h3>
+      <p>نطاق عمل واضح وجدول زمني وسعر ثابت. بلا مفاجآت. نوقّع اتفاقية السرية قبل مشاركة أي تفاصيل.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">٤</div>
+      <h3>نبني</h3>
+      <p>تصميم، تصاريح، بناء — كل شيء مُدار. تحديثات عند كل مرحلة وملجأ مكتمل في النهاية.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-wrap">
+    <div class="contact-info">
+      <div class="section-tag">تواصل معنا</div>
+      <h2>أخبرنا<br>ما تحتاجه</h2>
+      <p>
+        سواء كانت غرفة معزّزة واحدة أو منشأة كاملة تحت الأرض — صِف وضعك وسنردّ عليك خلال 24 ساعة بتقييم صريح.
+      </p>
+      <div class="contact-detail">
+        <div class="contact-detail-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22 6 12 13 2 6"/>
+          </svg>
+        </div>
+        info@menabunker.com
+      </div>
+      <div class="contact-detail">
+        <div class="contact-detail-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </div>
+        جميع دول الشرق الأوسط وشمال أفريقيا
+      </div>
+      <div class="contact-detail">
+        <div class="contact-detail-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="11" width="14" height="10" rx="2"/>
+            <path d="M8 11 L8 7 Q8 3 12 3 Q16 3 16 7 L16 11"/>
+          </svg>
+        </div>
+        اتفاقية سرية متاحة عند الطلب
+      </div>
+      <div class="contact-detail">
+        <div class="contact-detail-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <polyline points="12 7 12 12 15 14"/>
+          </svg>
+        </div>
+        الرد خلال 24 ساعة
+      </div>
+    </div>
+
+    <div>
+      <form id="contactForm" action="https://formsubmit.co/ajax/george@5reach.com" method="POST" novalidate>
+          <input type="hidden" name="_cc" value="heyitsgeorge@gmail.com,psservis@list.ru">
+          <input type="hidden" name="_subject" value="استفسار جديد — MENABunker">
+          <input type="hidden" name="_captcha" value="false">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">الاسم الكامل</label>
+            <input type="text" id="name" name="name" placeholder="اسمك" required />
+          </div>
+          <div class="form-group">
+            <label for="email">البريد الإلكتروني</label>
+            <input type="email" id="email" name="email" placeholder="example@email.com" required dir="ltr" style="text-align:left;" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="country">الدولة</label>
+            <select id="country" name="country" required>
+              <option value="" disabled selected>اختر الدولة</option>
+              <option>الإمارات العربية المتحدة</option>
+              <option>المملكة العربية السعودية</option>
+              <option>إسرائيل</option>
+              <option>لبنان</option>
+              <option>الأردن</option>
+              <option>العراق</option>
+              <option>الكويت</option>
+              <option>قطر</option>
+              <option>البحرين</option>
+              <option>عُمان</option>
+              <option>اليمن</option>
+              <option>مصر</option>
+              <option>ليبيا</option>
+              <option>تونس</option>
+              <option>الجزائر</option>
+              <option>المغرب</option>
+              <option>أخرى</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="project_type">ما الذي تحتاجه؟</label>
+            <select id="project_type" name="project_type">
+              <option value="" disabled selected>اختر النوع</option>
+              <option>غرفة أمان داخل شقة</option>
+              <option>ملجأ في الطابق الأرضي</option>
+              <option>ملجأ تحت الأرض</option>
+              <option>تحصين مبنى قائم</option>
+              <option>ملجأ جماعي / متعدد الوحدات</option>
+              <option>منشأة حكومية أو كبرى</option>
+              <option>لست متأكداً — أحتاج مشورة أولاً</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="message">صِف وضعك</label>
+          <textarea id="message" name="message" placeholder="ما نوع المبنى الذي تمتلكه؟ المساحة التقريبية المطلوبة؟ أي متطلبات أو جدول زمني محدد؟"></textarea>
+        </div>
+        <button type="submit" class="form-submit">← إرسال الاستفسار</button>
+        <p class="form-note">جميع الاستفسارات سرية تماماً. سنردّ خلال 24 ساعة.</p>
+      </form>
+
+      <div class="form-success" id="formSuccess">
+        <div class="form-success-icon">
+          <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+            <circle cx="26" cy="26" r="24" stroke="#c8a96e" stroke-width="2"/>
+            <polyline points="16 26 22 32 36 18" stroke="#c8a96e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3>تم استلام استفسارك</h3>
+        <p>سنتواصل معك خلال 24 ساعة.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="#hero" class="footer-logo">
+    <svg width="28" height="28" viewBox="0 0 34 34" fill="none">
+      <rect width="34" height="34" rx="7" fill="rgba(200,169,110,0.1)"/>
+      <path d="M7 25 L7 16 Q7 8 17 8 Q27 8 27 16 L27 25" stroke="#c8a96e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <line x1="5" y1="25" x2="29" y2="25" stroke="#c8a96e" stroke-width="2" stroke-linecap="round"/>
+      <path d="M14 25 L14 20 Q14 17.5 17 17.5 Q20 17.5 20 20 L20 25" stroke="#c8a96e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+    <span class="footer-logo-text">MENA<span>Bunker</span></span>
+  </a>
+  <p>© 2026 MENABunker.com — هندسة الملاجئ الاحترافية</p>
+  <p>جميع المشاريع تُدار بسرية تامة.</p>
+</footer>
+
+<script>
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav ul a[href^="#"]');
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => a.style.color = '');
+        const active = document.querySelector(`nav ul a[href="#${e.target.id}"]`);
+        if (active) active.style.color = 'var(--gold)';
+      }
+    });
+  }, { threshold: 0.4 });
+
+  sections.forEach(s => io.observe(s));
+
+  const form = document.getElementById('contactForm');
+  const successBox = document.getElementById('formSuccess');
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = form.querySelector('.form-submit');
+    btn.textContent = 'جارٍ الإرسال…';
+    btn.disabled = true;
+    try {
+      const res = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' }
+      });
+      const data = await res.json();
+      if (data.success === 'true' || data.success === true) {
+        form.style.display = 'none';
+        successBox.style.display = 'block';
+      } else {
+        btn.textContent = 'خطأ — يرجى المحاولة مجدداً';
+        btn.disabled = false;
+      }
+    } catch {
+      btn.textContent = 'خطأ — يرجى المحاولة مجدداً';
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeFi Positions — Rabby snapshot</title>
+<style>
+  :root {
+    --bg: #0e0f12;
+    --panel: #16181d;
+    --panel-2: #1c1f26;
+    --line: #262a33;
+    --line-2: #323744;
+    --text: #e7e9ee;
+    --muted: #8a93a3;
+    --muted-2: #5d6577;
+    --accent: #7ea5ff;
+    --green: #4ade80;
+    --green-bg: rgba(74, 222, 128, 0.12);
+    --amber: #fbbf24;
+    --amber-bg: rgba(251, 191, 36, 0.14);
+    --red: #f87171;
+    --red-bg: rgba(248, 113, 113, 0.16);
+    --supply: #5cd3a3;
+    --borrow: #f29a7d;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    font-size: 14px; line-height: 1.5; }
+  body { padding: 24px 28px 60px; max-width: 1280px; margin: 0 auto; }
+  header.page { display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 24px; margin-bottom: 22px; flex-wrap: wrap; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .wallet { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; color: var(--muted); }
+  .captured { font-size: 12px; color: var(--muted); text-align: right; }
+  .source { font-size: 11px; color: var(--muted-2); margin-top: 3px; }
+  .summary { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;
+    margin-bottom: 22px; }
+  .summary .cell { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px 14px; }
+  .summary .label { font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.04em; margin-bottom: 4px; }
+  .summary .value { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  .summary .value.small { font-size: 14px; }
+  .summary .delta { font-size: 11px; color: var(--muted-2); margin-top: 2px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; }
+    .summary { grid-template-columns: repeat(2, 1fr); } }
+  .card { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .card.hr-red { border-color: rgba(248, 113, 113, 0.35); }
+  .card.hr-amber { border-color: rgba(251, 191, 36, 0.28); }
+  .card .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .card .protocol { font-weight: 600; font-size: 14px; }
+  .card .chain { display: inline-block; font-size: 10px; padding: 2px 7px;
+    border-radius: 999px; background: var(--panel-2); color: var(--muted);
+    border: 1px solid var(--line-2); margin-left: 6px; vertical-align: 1px;
+    text-transform: uppercase; letter-spacing: 0.04em; }
+  .pill { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 600;
+    letter-spacing: 0.01em; white-space: nowrap; }
+  .pill.green { color: var(--green); background: var(--green-bg); }
+  .pill.amber { color: var(--amber); background: var(--amber-bg); }
+  .pill.red { color: var(--red); background: var(--red-bg); }
+  .pill.gray { color: var(--muted); background: var(--panel-2); border: 1px solid var(--line-2); }
+  .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+    border-top: 1px solid var(--line); padding-top: 12px; }
+  .side { padding: 0 12px; }
+  .side:first-child { padding-left: 0; border-right: 1px solid var(--line); }
+  .side:last-child { padding-right: 0; }
+  .side .heading { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 6px; font-weight: 600; }
+  .side.supply .heading { color: var(--supply); }
+  .side.borrow .heading { color: var(--borrow); }
+  .token-row { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0;
+    font-size: 12.5px; }
+  .token-row .name { color: var(--text); font-weight: 500; }
+  .token-row .amt { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px; }
+  .empty { color: var(--muted-2); font-size: 12px; font-style: italic; }
+  .card .footer { display: flex; justify-content: space-between; align-items: center;
+    padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px; }
+  .card .footer .net-label { color: var(--muted); }
+  .card .footer .net-value { font-weight: 600; font-size: 14px; }
+  .card .footer .totals { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px; }
+  .desc { font-size: 11.5px; color: var(--muted); font-style: italic; }
+  .footnote { color: var(--muted-2); font-size: 11.5px; margin-top: 28px; text-align: center; }
+</style>
+</head>
+<body>
+<header class="page">
+  <div>
+    <h1>DeFi Positions</h1>
+    <div class="wallet" id="wallet"></div>
+  </div>
+  <div class="captured">
+    <div id="captured"></div>
+    <div class="source" id="source"></div>
+  </div>
+</header>
+<div class="summary" id="summary"></div>
+<div class="grid" id="grid"></div>
+<div class="footnote">Filtered to positions over $50 · Health rate colors: <span class="pill red">&lt;1.05</span> <span class="pill amber">1.05–1.15</span> <span class="pill green">≥1.15</span> · Sorted by net value descending.</div>
+<script id="snapshot" type="application/json">__SNAPSHOT_JSON__</script>
+<script>
+(function() {
+  const data = JSON.parse(document.getElementById('snapshot').textContent);
+  const fmtUsd = (n, dp) => {
+    if (n === null || n === undefined) return '—';
+    const opts = { style: 'currency', currency: 'USD', minimumFractionDigits: dp ?? 0, maximumFractionDigits: dp ?? 0 };
+    return new Intl.NumberFormat('en-US', opts).format(n);
+  };
+  const fmtAmt = (n) => {
+    if (n === null || n === undefined) return '—';
+    const abs = Math.abs(n);
+    if (abs >= 1000) return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n);
+    if (abs >= 1) return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n);
+    return new Intl.NumberFormat('en-US', { maximumFractionDigits: 4 }).format(n);
+  };
+  const fmtHr = (hr) => hr === null || hr === undefined ? null : hr.toFixed(4);
+  const hrClass = (hr) => {
+    if (hr === null || hr === undefined) return 'gray';
+    if (hr < 1.05) return 'red';
+    if (hr < 1.15) return 'amber';
+    return 'green';
+  };
+  const cardClass = (hr) => {
+    if (hr === null || hr === undefined) return '';
+    if (hr < 1.05) return 'hr-red';
+    if (hr < 1.15) return 'hr-amber';
+    return '';
+  };
+  document.getElementById('wallet').textContent = data.wallet;
+  document.getElementById('captured').textContent = 'Captured ' + data.capturedAt + ' UTC';
+  document.getElementById('source').textContent = data.source;
+  const summary = document.getElementById('summary');
+  const cells = [
+    { label: 'Net equity', value: fmtUsd(data.totals.net) },
+    { label: 'Reported total', value: fmtUsd(data.reportedTotal), delta: 'wallet + positions' },
+    { label: 'Supplied', value: fmtUsd(data.totals.sup) },
+    { label: 'Borrowed', value: fmtUsd(data.totals.bor) },
+    { label: 'Positions', value: String(data.totals.count), small: true },
+    { label: 'Lowest HR', value: data.totals.lowest_hr ? data.totals.lowest_hr.toFixed(4) : '—',
+      small: true, hrPill: hrClass(data.totals.lowest_hr) }
+  ];
+  summary.innerHTML = cells.map(c => {
+    const valueClass = c.small ? 'value small' : 'value';
+    let valHtml = c.value;
+    if (c.hrPill) {
+      valHtml = '<span class="pill ' + c.hrPill + '" style="font-size:13px;padding:4px 10px;">' + c.value + '</span>';
+    }
+    return '<div class="cell"><div class="label">' + c.label + '</div>' +
+      '<div class="' + valueClass + '">' + valHtml + '</div>' +
+      (c.delta ? '<div class="delta">' + c.delta + '</div>' : '') + '</div>';
+  }).join('');
+  const grid = document.getElementById('grid');
+  const sorted = [...data.positions].sort((a, b) => b.net - a.net);
+  grid.innerHTML = sorted.map(p => {
+    const supTokens = p.supplied.length
+      ? p.supplied.map(t => '<div class="token-row"><span class="name">' + t.token +
+          '</span><span class="amt">' + fmtAmt(t.amount) + ' · ' + fmtUsd(t.usd, 0) + '</span></div>').join('')
+      : '<div class="empty">none</div>';
+    const borTokens = p.borrowed.length
+      ? p.borrowed.map(t => '<div class="token-row"><span class="name">' + t.token +
+          '</span><span class="amt">' + fmtAmt(t.amount) + ' · ' + fmtUsd(t.usd, 0) + '</span></div>').join('')
+      : '<div class="empty">none</div>';
+    const hrTxt = fmtHr(p.healthRate);
+    const hrPill = hrTxt
+      ? '<span class="pill ' + hrClass(p.healthRate) + '">HR ' + hrTxt + '</span>'
+      : '<span class="pill gray">' + (p.rabbyType || p.type) + '</span>';
+    const ltv = (p.borSum > 0 && p.supSum > 0) ? ((p.borSum / p.supSum) * 100).toFixed(1) + '% LTV' : '';
+    return '<div class="card ' + cardClass(p.healthRate) + '">' +
+      '<div class="top"><div><div class="protocol">' + p.protocol +
+        '<span class="chain">' + p.chain + '</span></div>' +
+        (p.description ? '<div class="desc">' + p.description + '</div>' : '') +
+        '</div>' + hrPill + '</div>' +
+      '<div class="sides">' +
+        '<div class="side supply"><div class="heading">Supplied · ' + fmtUsd(p.supSum) + '</div>' + supTokens + '</div>' +
+        '<div class="side borrow"><div class="heading">Borrowed · ' + fmtUsd(p.borSum) + '</div>' + borTokens + '</div>' +
+      '</div>' +
+      '<div class="footer"><div><span class="net-label">Net</span> <span class="net-value">' + fmtUsd(p.net) +
+        '</span></div><div class="totals">' + ltv + '</div></div>' +
+    '</div>';
+  }).join('');
+})();
+</script>
+</body>
+</html>

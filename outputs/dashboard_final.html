@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeFi Positions — Rabby snapshot &amp; history</title>
+<style>
+:root {
+  --bg:#0e0f12; --panel:#16181d; --panel-2:#1c1f26;
+  --line:#262a33; --line-2:#323744;
+  --text:#e7e9ee; --muted:#8a93a3; --muted-2:#5d6577;
+  --green:#4ade80; --green-bg:rgba(74,222,128,.12);
+  --amber:#fbbf24; --amber-bg:rgba(251,191,36,.14);
+  --red:#f87171; --red-bg:rgba(248,113,113,.16);
+  --supply:#5cd3a3; --borrow:#f29a7d;
+  --pos:#4ade80; --neg:#f87171;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--text);margin:0;padding:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;
+  font-size:13.5px;line-height:1.5}
+body{padding:22px 26px 60px;max-width:1560px;margin:0 auto}
+header.page{display:flex;justify-content:space-between;align-items:flex-start;
+  gap:24px;margin-bottom:20px;flex-wrap:wrap}
+h1{font-size:18px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+.wallet{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--muted)}
+.captured{font-size:12px;color:var(--muted);text-align:right}
+.source{font-size:11px;color:var(--muted-2);margin-top:3px}
+.history-note{font-size:11px;color:var(--muted-2);margin-top:3px;font-style:italic}
+.summary{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px}
+.summary .cell{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+.summary .label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.summary .value{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.summary .value.small{font-size:13.5px}
+.pill{font-size:10.5px;padding:2px 7px;border-radius:999px;font-weight:600;white-space:nowrap;display:inline-block}
+.pill.green{color:var(--green);background:var(--green-bg)}
+.pill.amber{color:var(--amber);background:var(--amber-bg)}
+.pill.red{color:var(--red);background:var(--red-bg)}
+.pill.gray{color:var(--muted);background:var(--panel-2);border:1px solid var(--line-2)}
+.section-title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+  margin:24px 0 8px;font-weight:600}
+.tbl{width:100%;border-collapse:separate;border-spacing:0;background:var(--panel);
+  border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tbl thead th{background:var(--panel-2);color:var(--muted);font-size:10px;
+  text-transform:uppercase;letter-spacing:.05em;font-weight:600;text-align:right;
+  padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl thead th:first-child{text-align:left}
+.tbl thead th .h-sub{display:block;font-size:9px;color:var(--muted-2);text-transform:none;letter-spacing:0;margin-top:1px;font-weight:400}
+.tbl tbody td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;
+  vertical-align:top;font-variant-numeric:tabular-nums}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl tbody td:first-child{text-align:left}
+.tbl tbody tr:hover td{background:rgba(255,255,255,.015)}
+.pos-cell .protocol{font-weight:600;font-size:12.5px}
+.pos-cell .chain{display:inline-block;font-size:9px;padding:1px 6px;border-radius:999px;
+  background:var(--panel-2);color:var(--muted);border:1px solid var(--line-2);
+  margin-left:5px;vertical-align:1px;text-transform:uppercase;letter-spacing:.04em}
+.pos-cell .composition{font-size:10.5px;color:var(--muted);margin-top:2px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;max-width:240px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.now-collat{color:var(--supply);font-weight:600;font-size:12.5px}
+.now-debt{color:var(--borrow);font-weight:600;font-size:12.5px}
+.now-net{font-weight:700;font-size:13px}
+.now-net.neg{color:var(--neg)}
+.delta-cell{padding:6px 10px !important;line-height:1.35}
+.dline{display:flex;justify-content:space-between;gap:8px;align-items:baseline;
+  font-size:11px;font-variant-numeric:tabular-nums}
+.dline .lbl{color:var(--muted-2);font-size:9.5px;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:600;flex-shrink:0;width:14px;text-align:left}
+.dline .v{font-weight:600}
+.v.pos{color:var(--pos)}
+.v.neg{color:var(--neg)}
+.v.zero{color:var(--muted-2)}
+.delta-empty{color:var(--muted-2);font-size:11px}
+.absent{color:var(--amber);font-size:10.5px}
+.tag-since{display:block;color:var(--muted-2);font-size:9.5px;margin-top:2px}
+.totals-row td{background:var(--panel-2);font-weight:600;font-size:12px}
+.empty-state{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:18px 20px;color:var(--muted);font-size:12.5px}
+.legend{font-size:10.5px;color:var(--muted-2);display:flex;gap:14px;
+  align-items:center;margin:6px 0 0;flex-wrap:wrap}
+.legend .swatch{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:1px}
+.footnote{color:var(--muted-2);font-size:11px;margin-top:24px;text-align:center}
+</style>
+</head>
+<body>
+<header class="page">
+  <div>
+    <h1>DeFi Positions — Rabby</h1>
+    <div class="wallet" id="wallet"></div>
+  </div>
+  <div class="captured">
+    <div id="captured"></div>
+    <div class="source" id="source"></div>
+    <div class="history-note" id="history-note"></div>
+  </div>
+</header>
+
+<div class="summary" id="summary"></div>
+
+<div class="section-title">Per-position state &amp; deltas — vs snapshots from 12h, 24h, 48h, 72h, 7d ago</div>
+<div class="legend">
+  <span><span class="swatch" style="background:#5cd3a3"></span>Collateral (C)</span>
+  <span><span class="swatch" style="background:#f29a7d"></span>Debt (D)</span>
+  <span><span class="swatch" style="background:#e7e9ee"></span>Net (N)</span>
+  <span style="margin-left:6px">Asset coloring: green = went up · Liability coloring: green = went down</span>
+</div>
+<table class="tbl">
+  <thead>
+    <tr>
+      <th>Position</th>
+      <th>Collateral<span class="h-sub">supplied $</span></th>
+      <th>Debt<span class="h-sub">borrowed $</span></th>
+      <th>Net<span class="h-sub">C − D</span></th>
+      <th>HR</th>
+      <th>&Delta; 12h</th>
+      <th>&Delta; 24h</th>
+      <th>&Delta; 48h</th>
+      <th>&Delta; 72h</th>
+      <th>&Delta; 7d</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<div id="wallet-tokens"></div>
+
+<div id="closed"></div>
+
+<div class="footnote">Generated 2026-04-27 20:20:23 UTC · Snapshots collected every 12h (cron) · Filtered to positions over $50.</div>
+
+<script id="payload" type="application/json">{"wallet":"0xe16be042f9433779909a972669be3a2003956348","capturedAt":"2026-04-27 20:19:44","source":"Rabby API (api.rabby.io/v1/user/complex_protocol_list)","reportedTotal":568090.1937520073,"totals":{"sup":2973201.264962855,"bor":2496853.330702916,"net":476347.934259939,"count":13,"lowest_hr":1.0298,"walletTokensTotal":97310.10961785681},"positions":[{"protocol":"Fluid","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.048,"supplied":[{"token":"reUSD","amount":131159.65291263416,"usd":140924.48053775492}],"borrowed":[{"token":"USDT","amount":121005.81696,"usd":121025.17789071359}],"description":"","supSum":140924.48053775492,"borSum":121025.17789071359,"rewSum":0,"net":19899.30264704133,"poolId":"0x324c5dc1fc42c7a4d43d92df1eba58a54d13bf2d","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":140906.54550042207,"borSum":121005.87297362927,"net":19900.672526792798,"healthRate":1.048,"deltaNet":-1.3698797514662147,"deltaSup":17.93503733284888,"deltaBor":19.304917084315093,"deltaHr":0.0},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Fluid","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0298,"supplied":[{"token":"syrupUSDC","amount":41873.835070975336,"usd":48642.02479876678},{"token":"USDC","amount":508153.4822641544,"usd":508153.4822641544}],"borrowed":[{"token":"USDC","amount":497435.526476,"usd":497435.526476}],"description":"","supSum":556795.5070629212,"borSum":497435.526476,"rewSum":0,"net":59359.980586921156,"poolId":"0x324c5dc1fc42c7a4d43d92df1eba58a54d13bf2d","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":556790.5820492627,"borSum":497430.648411,"net":59359.93363826274,"healthRate":1.0298,"deltaNet":0.04694865841884166,"deltaSup":4.9250136584741995,"deltaBor":4.878065000055358,"deltaHr":0.0},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Curve LlamaLend","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.045,"supplied":[{"token":"sfrxUSD","amount":275773.43553,"usd":328646.4662614532}],"borrowed":[{"token":"crvUSD","amount":306353.7603926144,"usd":306365.32015362306}],"description":"","supSum":328646.4662614532,"borSum":306365.32015362306,"rewSum":0,"net":22281.146107830165,"poolId":"0x3de37c38739dfb83b7a902842bf5393040f7bf50","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":328607.22500636627,"borSum":306354.8740568539,"net":22252.350949512387,"healthRate":1.045,"deltaNet":28.79515831777826,"deltaSup":39.241255086963065,"deltaBor":10.446096769184805,"deltaHr":0.0},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Curve LlamaLend","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0375,"supplied":[{"token":"sUSDe","amount":314125.85536718956,"usd":385927.0506582399}],"borrowed":[{"token":"crvUSD","amount":349558.65129773784,"usd":349571.84132505243}],"description":"","supSum":385927.0506582399,"borSum":349571.84132505243,"rewSum":0,"net":36355.20933318749,"poolId":"0xb536fea3a01c95dd09932440ec802a75410139d6","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":385878.6287867288,"borSum":349559.41645509005,"net":36319.21233163873,"healthRate":1.0375,"deltaNet":35.997001548763365,"deltaSup":48.42187151114922,"deltaBor":12.424869962385856,"deltaHr":0.0},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Metronome","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.1022,"supplied":[{"token":"USDC","amount":364811.601251,"usd":364811.601251}],"borrowed":[{"token":"msUSD","amount":281274.48063669703,"usd":280168.9139299712}],"description":"","supSum":364811.601251,"borSum":280168.9139299712,"rewSum":0,"net":84642.68732102879,"poolId":"0x3364f53cb866762aef66deef2a6b1a17c1f17f46","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":364811.601251,"borSum":280137.32246608636,"net":84674.27878491365,"healthRate":1.1022,"deltaNet":-31.591463884862605,"deltaSup":0.0,"deltaBor":31.591463884862605,"deltaHr":0.0},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Aave V3","chain":"Mantle","chainId":"mnt","type":"Lending","rabbyType":"Lending","healthRate":1.0542,"supplied":[{"token":"WMNT","amount":39.895129146671614,"usd":25.32626578001922},{"token":"syrupUSDT","amount":69284.08324,"usd":77756.00611094951},{"token":"GHO","amount":36.77939063458863,"usd":36.73804376926812}],"borrowed":[{"token":"USDT0","amount":68014.697469,"usd":68025.57982059504},{"token":"USDC","amount":0.077537,"usd":0.077537}],"description":"","supSum":77818.0704204988,"borSum":68025.65735759505,"rewSum":0,"net":9792.413062903754,"poolId":"0x458f293454fe0d67ec0655f3672301301dd51422","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":77809.4579978996,"borSum":68014.93354175864,"net":9794.524456140964,"healthRate":1.0541,"deltaNet":-2.1113932372099953,"deltaSup":8.61242259919527,"deltaBor":10.723815836405265,"deltaHr":9.999999999998899e-05},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.1286,"supplied":[{"token":"PT-apyUSD-18JUN2026","amount":201006.01797795203,"usd":197050.73815671646}],"borrowed":[{"token":"USDC","amount":150196.62588470403,"usd":150196.62588470403}],"description":"","supSum":197050.73815671646,"borSum":150196.62588470403,"rewSum":0,"net":46854.112272012426,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":196923.62427104416,"borSum":150192.67247178088,"net":46730.951799263275,"healthRate":1.128,"deltaNet":123.16047274915036,"deltaSup":127.11388567229733,"deltaBor":3.9534129231469706,"deltaHr":0.000600000000000156},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.1076,"supplied":[{"token":"PT-srNUSD-28MAY2026","amount":283979.2379005246,"usd":281843.59215957776}],"borrowed":[{"token":"USDC","amount":233084.11609348396,"usd":233084.11609348396}],"description":"","supSum":281843.59215957776,"borSum":233084.11609348396,"rewSum":0,"net":48759.476066093805,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":282002.46690661914,"borSum":233084.11609348396,"net":48918.350813135185,"healthRate":1.1075,"deltaNet":-158.87474704138003,"deltaSup":-158.87474704138003,"deltaBor":0.0,"deltaHr":9.999999999998899e-05},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.1289,"supplied":[{"token":"mF-ONE","amount":148000.0,"usd":159784.05748}],"borrowed":[{"token":"USDC","amount":119538.42016890012,"usd":119538.42016890012}],"description":"","supSum":159784.05748,"borSum":119538.42016890012,"rewSum":0,"net":40245.63731109987,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":159768.0806719328,"borSum":119537.01532794842,"net":40231.06534398439,"healthRate":1.1289,"deltaNet":14.57196711548022,"deltaSup":15.976808067178354,"deltaBor":1.4048409516981337,"deltaHr":0.0},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Morpho","chain":"Ethereum","chainId":"eth","type":"Lending","rabbyType":"Lending","healthRate":1.0574,"supplied":[{"token":"sUSDe","amount":130322.31737401568,"usd":160110.6904120006}],"borrowed":[{"token":"PYUSD","amount":138503.50038134257,"usd":138448.09898119004}],"description":"","supSum":160110.6904120006,"borSum":138448.09898119004,"rewSum":0,"net":21662.59143081057,"poolId":"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":160090.60148777138,"borSum":138444.7883144777,"net":21645.81317329369,"healthRate":1.0574,"deltaNet":16.77825751688215,"deltaSup":20.08892422923236,"deltaBor":3.310666712350212,"deltaHr":0.0},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Pendle V2","chain":"Ethereum","chainId":"eth","type":"Yield","rabbyType":"Deposit","healthRate":null,"supplied":[{"token":"PT-reUSDe-25JUN2026","amount":35130.270946397795,"usd":34331.23647881099}],"borrowed":[],"description":"","supSum":34331.23647881099,"borSum":0,"rewSum":0,"net":34331.23647881099,"poolId":"0xdc9a5a2e3ce7ac881fc3b28c629c05d1617d1c56","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":34328.78784789529,"borSum":0,"net":34328.78784789529,"healthRate":null,"deltaNet":2.4486309157000505,"deltaSup":2.4486309157000505,"deltaBor":0,"deltaHr":null},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Fluid","chain":"Plasma","chainId":"plasma","type":"Lending","rabbyType":"Lending","healthRate":1.0416,"supplied":[{"token":"sUSDai","amount":249570.01805346226,"usd":269662.18134437676}],"borrowed":[{"token":"USDT0","amount":232977.324029,"usd":232993.63244168204}],"description":"","supSum":269662.18134437676,"borSum":232993.63244168204,"rewSum":0,"net":36668.54890269472,"poolId":"0x324c5dc1fc42c7a4d43d92df1eba58a54d13bf2d","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":269662.0312567775,"borSum":232977.10371973974,"net":36684.92753703779,"healthRate":1.0417,"deltaNet":-16.37863434306928,"deltaSup":0.15008759923512116,"deltaBor":16.5287219423044,"deltaHr":-9.999999999998899e-05},"24":null,"48":null,"72":null,"168":null}},{"protocol":"Yuzu Money","chain":"Plasma","chainId":"plasma","type":"Yield","rabbyType":"Yield","healthRate":null,"supplied":[{"token":"USDT0","amount":15494.508123935304,"usd":15495.59273950398}],"borrowed":[],"description":"Yuzu Protection Pool Cooldown #26","supSum":15495.59273950398,"borSum":0,"rewSum":0,"net":15495.59273950398,"poolId":"0xebfc8c2fe73c431ef2a371aea9132110aab50dca","history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"supSum":15493.066564825815,"borSum":0,"net":15493.066564825815,"healthRate":null,"deltaNet":2.526174678165262,"deltaSup":2.526174678165262,"deltaBor":0,"deltaHr":null},"24":null,"48":null,"72":null,"168":null}}],"walletTokens":[{"chain":"Ethereum","chainId":"eth","token":"USDT","id":"0xdac17f958d2ee523a2206206994597c13d831ec7","amount":65800.067936,"usd":65810.59594686977,"history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"absent":true},"24":null,"48":null,"72":null,"168":null}},{"chain":"Ethereum","chainId":"eth","token":"USDC","id":"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","amount":23280.134693,"usd":23280.134693,"history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"absent":true},"24":null,"48":null,"72":null,"168":null}},{"chain":"Ethereum","chainId":"eth","token":"AICC","id":"0x66a3c2fa3e467aa586e90912f977e648589cabaf","amount":17500.0,"usd":5626.202944026384,"history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"absent":true},"24":null,"48":null,"72":null,"168":null}},{"chain":"Ethereum","chainId":"eth","token":"PYUSD","id":"0x6c3ea9036406852006290770bedfcaba0e23a0e8","amount":2500.0,"usd":2499.0,"history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"absent":true},"24":null,"48":null,"72":null,"168":null}},{"chain":"Ethereum","chainId":"eth","token":"ETH","id":"eth","amount":0.0410797000508841,"usd":94.17603396065282,"history":{"12":{"at":"2026-04-27 15:58:00","hoursAgo":4.4,"absent":true},"24":null,"48":null,"72":null,"168":null}}],"closedPositions":[],"snapshotCount":4,"earliestSnapshotAt":"2026-04-27 15:53:27","lookbacksHours":[12,24,48,72,168]}</script>
+<script>
+(function(){
+  var data = JSON.parse(document.getElementById('payload').textContent);
+  var L = data.lookbacksHours || [12,24,48,72,168];
+
+  function fmtUsd(n){ if(n==null) return '—';
+    var o={style:'currency',currency:'USD',minimumFractionDigits:0,maximumFractionDigits:0};
+    return new Intl.NumberFormat('en-US',o).format(n); }
+  function fmtSigned(n){ if(n==null) return '—';
+    var sign = n>0?'+':n<0?'−':''; var abs=Math.abs(n);
+    var v = abs>=1000? Math.round(abs).toLocaleString('en-US') : abs.toFixed(0);
+    return sign+'$'+v; }
+  function fmtSignedHr(h){ if(h==null) return null;
+    var sign=h>0?'+':h<0?'−':''; return sign+Math.abs(h).toFixed(4); }
+  function hrCls(h){ if(h==null) return 'gray'; if(h<1.05) return 'red';
+    if(h<1.15) return 'amber'; return 'green'; }
+  // 'asset' coloring: positive = good (green), negative = bad (red).
+  // 'liability' coloring: positive = bad (red), negative = good (green).
+  function vClsAsset(d){ if(d==null||Math.abs(d)<0.5) return 'zero'; return d>0?'pos':'neg'; }
+  function vClsLiab(d){ if(d==null||Math.abs(d)<0.5) return 'zero'; return d>0?'neg':'pos'; }
+
+  document.getElementById('wallet').textContent = data.wallet;
+  document.getElementById('captured').textContent = 'Snapshot ' + data.capturedAt + ' UTC';
+  document.getElementById('source').textContent = data.source;
+  var hist = document.getElementById('history-note');
+  if(data.snapshotCount<=1){
+    hist.textContent = 'History: 1 snapshot — deltas appear once we have ≥2.';
+  } else {
+    hist.textContent = 'History: '+data.snapshotCount+' snapshots since '+data.earliestSnapshotAt+' UTC';
+  }
+
+  var t = data.totals;
+  var summary = document.getElementById('summary');
+  var hrTxt = t.lowest_hr!=null?t.lowest_hr.toFixed(4):'—';
+  var hrPill = '<span class="pill '+hrCls(t.lowest_hr)+'" style="font-size:13px;padding:3px 9px;">'+hrTxt+'</span>';
+  var cells = [
+    ['Net equity', fmtUsd(t.net), false],
+    ['Reported total', fmtUsd(data.reportedTotal), false],
+    ['Collateral', fmtUsd(t.sup), false],
+    ['Debt', fmtUsd(t.bor), false],
+    ['Positions', String(t.count), true],
+    ['Lowest HR', hrPill, true]
+  ];
+  summary.innerHTML = cells.map(function(c){
+    return '<div class="cell"><div class="label">'+c[0]+'</div>'+
+      '<div class="value'+(c[2]?' small':'')+'">'+c[1]+'</div></div>';
+  }).join('');
+
+  function deltaCellHTML(hh){
+    if(!hh) return '<td class="delta-cell"><span class="delta-empty">—</span></td>';
+    if(hh.absent) return '<td class="delta-cell"><span class="absent">opened since</span>'+
+      '<span class="tag-since">'+hh.hoursAgo+'h ago</span></td>';
+    var dC = hh.deltaSup, dD = hh.deltaBor, dN = hh.deltaNet;
+    return '<td class="delta-cell">'+
+      '<div class="dline"><span class="lbl">C</span><span class="v '+vClsAsset(dC)+'">'+fmtSigned(dC)+'</span></div>'+
+      '<div class="dline"><span class="lbl">D</span><span class="v '+vClsLiab(dD)+'">'+fmtSigned(dD)+'</span></div>'+
+      '<div class="dline"><span class="lbl">N</span><span class="v '+vClsAsset(dN)+'">'+fmtSigned(dN)+'</span></div>'+
+    '</td>';
+  }
+
+  var tbody = document.getElementById('tbody');
+  var sorted = data.positions.slice().sort(function(a,b){ return b.net - a.net; });
+  var rows = sorted.map(function(p){
+    var compTokens = (p.supplied||[]).map(function(x){return x.token}).join('+') + ' / ' +
+                     ((p.borrowed||[]).length ? p.borrowed.map(function(x){return x.token}).join('+') : '—');
+    var hrCell = p.healthRate!=null
+      ? '<span class="pill '+hrCls(p.healthRate)+'">'+p.healthRate.toFixed(4)+'</span>'
+      : '<span class="pill gray">no debt</span>';
+    var deltaCells = L.map(function(h){ return deltaCellHTML(p.history && p.history[String(h)]); }).join('');
+    return '<tr>'+
+      '<td class="pos-cell"><div class="protocol">'+p.protocol+
+        '<span class="chain">'+p.chain+'</span></div>'+
+        '<div class="composition">'+compTokens+'</div></td>'+
+      '<td><span class="now-collat">'+fmtUsd(p.supSum)+'</span></td>'+
+      '<td><span class="now-debt">'+fmtUsd(p.borSum)+'</span></td>'+
+      '<td><span class="now-net'+(p.net<0?' neg':'')+'">'+fmtUsd(p.net)+'</span></td>'+
+      '<td>'+hrCell+'</td>'+
+      deltaCells+
+    '</tr>';
+  });
+  // Totals row
+  var totN = sorted.reduce(function(a,p){return a+p.net},0);
+  var totS = sorted.reduce(function(a,p){return a+p.supSum},0);
+  var totB = sorted.reduce(function(a,p){return a+p.borSum},0);
+  var totalDeltaCells = L.map(function(h){
+    var sumC=0, sumD=0, sumN=0, any=false;
+    sorted.forEach(function(p){
+      var hh = p.history && p.history[String(h)];
+      if(hh && !hh.absent && hh.deltaNet!=null){
+        sumC += hh.deltaSup||0; sumD += hh.deltaBor||0; sumN += hh.deltaNet||0; any=true;
+      }
+    });
+    if(!any) return '<td class="delta-cell"><span class="delta-empty">—</span></td>';
+    return '<td class="delta-cell">'+
+      '<div class="dline"><span class="lbl">C</span><span class="v '+vClsAsset(sumC)+'">'+fmtSigned(sumC)+'</span></div>'+
+      '<div class="dline"><span class="lbl">D</span><span class="v '+vClsLiab(sumD)+'">'+fmtSigned(sumD)+'</span></div>'+
+      '<div class="dline"><span class="lbl">N</span><span class="v '+vClsAsset(sumN)+'">'+fmtSigned(sumN)+'</span></div>'+
+    '</td>';
+  }).join('');
+  rows.push('<tr class="totals-row">'+
+    '<td>Total</td>'+
+    '<td><span class="now-collat">'+fmtUsd(totS)+'</span></td>'+
+    '<td><span class="now-debt">'+fmtUsd(totB)+'</span></td>'+
+    '<td><span class="now-net">'+fmtUsd(totN)+'</span></td>'+
+    '<td></td>'+
+    totalDeltaCells+
+  '</tr>');
+  tbody.innerHTML = rows.join('');
+
+  // Wallet tokens (plain holdings not in any position)
+  if(data.walletTokens && data.walletTokens.length){
+    var w = document.getElementById('wallet-tokens');
+    var headerCells = L.map(function(h){
+      var lbl = h<168 ? ('Δ '+h+'h') : 'Δ 7d';
+      return '<th>'+lbl+'</th>';
+    }).join('');
+    var sortedW = data.walletTokens.slice().sort(function(a,b){return b.usd - a.usd});
+    var totUsd = sortedW.reduce(function(a,t){return a+t.usd},0);
+    var rowsW = sortedW.map(function(t){
+      var deltaCells = L.map(function(h){
+        var hh = t.history && t.history[String(h)];
+        if(!hh) return '<td class="delta-cell"><span class="delta-empty">—</span></td>';
+        if(hh.absent) return '<td class="delta-cell"><span class="absent">new</span>'+
+          '<span class="tag-since">'+hh.hoursAgo+'h ago</span></td>';
+        return '<td class="delta-cell"><span class="v '+vClsAsset(hh.deltaUsd)+'">'+
+          fmtSigned(hh.deltaUsd)+'</span></td>';
+      }).join('');
+      return '<tr>'+
+        '<td class="pos-cell"><div class="protocol">'+t.token+
+          '<span class="chain">'+t.chain+'</span></div></td>'+
+        '<td><span class="now-collat">'+fmtUsd(t.usd)+'</span></td>'+
+        '<td style="color:var(--muted);font-family:ui-monospace,Menlo,monospace;font-size:11.5px">'+
+          (t.amount>=1?Math.round(t.amount).toLocaleString('en-US'):t.amount.toFixed(4))+'</td>'+
+        deltaCells+
+      '</tr>';
+    });
+    // Total row
+    var totalDeltaCellsW = L.map(function(h){
+      var sum=0, any=false;
+      sortedW.forEach(function(t){
+        var hh = t.history && t.history[String(h)];
+        if(hh && !hh.absent && hh.deltaUsd!=null){ sum += hh.deltaUsd; any=true; }
+      });
+      if(!any) return '<td class="delta-cell"><span class="delta-empty">—</span></td>';
+      return '<td class="delta-cell"><span class="v '+vClsAsset(sum)+'">'+fmtSigned(sum)+'</span></td>';
+    }).join('');
+    rowsW.push('<tr class="totals-row">'+
+      '<td>Total</td>'+
+      '<td><span class="now-collat">'+fmtUsd(totUsd)+'</span></td>'+
+      '<td></td>'+
+      totalDeltaCellsW+
+    '</tr>');
+    w.innerHTML = '<div class="section-title">Plain wallet tokens (not deployed)</div>'+
+      '<table class="tbl"><thead><tr>'+
+      '<th>Token</th><th>Value<span class="h-sub">USD</span></th><th>Amount</th>'+
+      headerCells+
+      '</tr></thead><tbody>'+rowsW.join('')+'</tbody></table>';
+  }
+
+  // Closed positions
+  if(data.closedPositions && data.closedPositions.length){
+    var c = document.getElementById('closed');
+    c.innerHTML = '<div class="section-title">Closed since first snapshot</div>'+
+      '<table class="tbl"><thead><tr>'+
+      '<th>Position</th><th>Last seen</th><th>Collateral</th><th>Debt</th><th>Net</th>'+
+      '</tr></thead><tbody>'+
+      data.closedPositions.map(function(q){
+        return '<tr><td class="pos-cell"><div class="protocol">'+q.protocol+
+          '<span class="chain">'+q.chain+'</span></div>'+
+          '<div class="composition">'+q.name+'</div></td>'+
+          '<td>'+q.lastSeenAt+' UTC</td>'+
+          '<td><span class="now-collat">'+fmtUsd(q.supSum)+'</span></td>'+
+          '<td><span class="now-debt">'+fmtUsd(q.borSum)+'</span></td>'+
+          '<td><span class="now-net">'+fmtUsd(q.net)+'</span></td></tr>';
+      }).join('')+
+      '</tbody></table>';
+  }
+})();
+</script>
+</body>
+</html>

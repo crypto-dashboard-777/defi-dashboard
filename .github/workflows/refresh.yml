@@ -29,7 +29,7 @@ jobs:
         env:
           DEBANK_WALLET: ${{ vars.DEBANK_WALLET || '0xe16be042f9433779909a972669be3a2003956348' }}
           SOL_WALLET: ${{ vars.SOL_WALLET || '6QcRFrTcHCZgKdtX83iusXVBvcz3vrwiKayREZtJBx5o' }}
-          OFFCHAIN_USD: '65567'   # ← set to 0 when funds return on-chain
+          OFFCHAIN_USD: '0'
         run: python outputs/refresh_positions.py
 
       - name: Publish to GitHub Pages root
