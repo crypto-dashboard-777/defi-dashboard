@@ -7,10 +7,19 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,15 +41,13 @@ jobs:
           OFFCHAIN_USD: '0'
         run: python outputs/refresh_positions.py
 
-      - name: Publish to GitHub Pages root
+      - name: Prepare site files
         run: |
-          # Copy dashboard to repo root so GitHub Pages (served from /) picks it up
           cp docs/index.html index.html
           cp docs/history.html history.html
-          # Prevent Jekyll from mangling our self-contained HTML
           touch .nojekyll
 
-      - name: Commit updated dashboard
+      - name: Commit snapshot and data back to repo
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -48,3 +55,15 @@ jobs:
           git diff --staged --quiet || git commit -m "refresh: $(date -u '+%Y-%m-%d %H:%M UTC')"
           git pull --rebase origin main
           git push
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
