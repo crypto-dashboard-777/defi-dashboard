@@ -257,6 +257,37 @@ def keep(p: dict) -> bool:
     return p["_supSum"] > FILTER_USD or p["_borSum"] > FILTER_USD or abs(p["_net"]) > FILTER_USD
 
 
+def position_base_key(p: dict) -> str:
+    """Protocol+pool without supply-token signature — used for fuzzy historical matching."""
+    raw_pool = (p.get("_poolId") or p.get("poolId") or "").strip()
+    has_pool = bool(raw_pool)
+    pool = raw_pool[:14] if has_pool else "nopool"
+    if has_pool:
+        return f"{p['protocol'].replace(' ', '')}|{pool}"
+    return f"{p['protocol'].replace(' ', '')}|{p.get('chainId', '?')}|nopool"
+
+
+def fuzzy_match(current_p: dict, candidates: list) -> dict | None:
+    """Exact match first; fallback to same protocol+pool where current supply tokens
+    are a subset of historical supply tokens (handles token withdrawals from a position,
+    e.g. GHO removed from WMNT+syrupUSDT+GHO → WMNT+syrupUSDT).
+    Only returns a fallback if exactly one candidate qualifies (avoids ambiguity)."""
+    key = position_key(current_p)
+    exact = next((q for q in candidates if position_key(q) == key), None)
+    if exact is not None:
+        return exact
+    cur_base = position_base_key(current_p)
+    cur_sup = {l["token"].upper() for l in current_p.get("supplied", [])}
+    if not cur_sup:
+        return None
+    subset_matches = [
+        q for q in candidates
+        if position_base_key(q) == cur_base
+        and cur_sup.issubset({l["token"].upper() for l in q.get("supplied", [])})
+    ]
+    return subset_matches[0] if len(subset_matches) == 1 else None
+
+
 def position_key(p: dict) -> str:
     """Stable, unique-per-market key including supply+borrow token signature.
     Works on both raw (with _poolId/_supSum) and rendered (with poolId/supSum) dicts.
@@ -544,7 +575,7 @@ def build_history(current: dict, snapshots: list[dict]):
             if snap is None:
                 history[str(h)] = None
                 continue
-            match = next((q for q in snap["positions"] if position_key(q) == key), None)
+            match = fuzzy_match(p, snap["positions"])
             if match is None:
                 history[str(h)] = {
                     "at": snap["capturedAt"],
@@ -567,7 +598,7 @@ def build_history(current: dict, snapshots: list[dict]):
                 }
         # Day 0 column — always anchored to day0.json regardless of age
         if _d0_snap:
-            d0_match = next((q for q in _d0_snap.get("positions", []) if position_key(q) == key), None)
+            d0_match = fuzzy_match(p, _d0_snap.get("positions", []))
             d0_hago = (current_t - parse_captured(_d0_at)).total_seconds() / 3600 if _d0_at else None
             if d0_match:
                 history["d0"] = {
