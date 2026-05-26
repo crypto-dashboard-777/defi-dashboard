@@ -2196,6 +2196,24 @@ def main():
     else:
         combined_total = reported_total
 
+    # Polymarket — hardcoded USDC position on Polygon (prediction market)
+    # Update POLYMARKET_USD env var or this default when positions change.
+    polymarket_usd = float(os.environ.get("POLYMARKET_USD") or 324.96)
+    if polymarket_usd > 0:
+        pm_pos = {
+            "_supSum": polymarket_usd, "_borSum": 0, "_rewSum": 0, "_net": polymarket_usd,
+            "_poolId": "polymarket", "_source": "manual",
+            "protocol": "Polymarket", "chain": "Polygon", "chainId": "matic",
+            "type": "Prediction", "rabbyType": "Yield", "healthRate": None,
+            "supplied": [{"token": "USDC", "amount": polymarket_usd, "usd": polymarket_usd}],
+            "borrowed": [], "description": "NBA predictions",
+            "supSum": polymarket_usd, "borSum": 0, "rewSum": 0, "net": polymarket_usd,
+            "poolId": "polymarket",
+        }
+        positions.append(pm_pos)
+        combined_total = (combined_total or 0) + polymarket_usd
+        print(f"[refresh] Polymarket: ${polymarket_usd:,.2f} USDC (Polygon)")
+
     # Off-chain capital adjustment — set OFFCHAIN_USD env var when funds are
     # temporarily moved off-chain to prevent aberrations in the dashboard.
     # e.g. export OFFCHAIN_USD=65567 in refresh_and_push.sh
