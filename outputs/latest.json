@@ -1,15 +1,15 @@
 {
   "wallet": "0xe16be042f9433779909a972669be3a2003956348",
-  "capturedAt": "2026-05-26 22:46:25",
+  "capturedAt": "2026-05-26 22:47:31",
   "source": "Rabby API + Jupiter",
-  "reportedTotal": 635493.9209167992,
+  "reportedTotal": 635168.8347280775,
   "totals": {
-    "sup": 3520885.1745152087,
+    "sup": 3520885.1024702145,
     "bor": 2886310.230579321,
-    "net": 634574.9439358879,
+    "net": 634574.8718908937,
     "count": 20,
     "lowest_hr": 1.028,
-    "walletTokensTotal": 408.2969742825491
+    "walletTokensTotal": 408.2025283196386
   },
   "positions": [
     {
@@ -185,7 +185,7 @@
         {
           "token": "WMNT",
           "amount": 32.752041811203966,
-          "usd": 20.83242747464345
+          "usd": 20.83891237892207
         },
         {
           "token": "syrupUSDT",
@@ -201,10 +201,10 @@
         }
       ],
       "description": "",
-      "supSum": 78479.29295638105,
+      "supSum": 78479.29944128533,
       "borSum": 69196.87315278334,
       "rewSum": 0,
-      "net": 9282.419803597702,
+      "net": 9282.426288501985,
       "poolId": "0x458f293454fe0d67ec0655f3672301301dd51422"
     },
     {
@@ -464,15 +464,15 @@
         {
           "token": "WXPL",
           "amount": 974.0779728573507,
-          "usd": 85.32923042230392
+          "usd": 85.23182262501818
         }
       ],
       "borrowed": [],
       "description": "",
-      "supSum": 85.32923042230392,
+      "supSum": 85.23182262501818,
       "borSum": 0,
       "rewSum": 0,
-      "net": 85.32923042230392,
+      "net": 85.23182262501818,
       "poolId": "0x3ef3d8ba38ebe18db133cec108f4d14ce00dd9ae"
     },
     {
@@ -516,7 +516,7 @@
         {
           "token": "syrupUSDC",
           "amount": 188778.984736,
-          "usd": 220120.61168976707
+          "usd": 220120.63056766556
         }
       ],
       "borrowed": [
@@ -527,10 +527,10 @@
         }
       ],
       "description": "Loan J5Xhyrtm",
-      "supSum": 220120.61168976707,
+      "supSum": 220120.63056766556,
       "borSum": 198119.32403,
       "rewSum": 0.0,
-      "net": 22001.287659767084,
+      "net": 22001.306537665572,
       "poolId": "J5Xhyrtm"
     },
     {
@@ -561,28 +561,6 @@
       "rewSum": 0.0,
       "net": 28327.095376811747,
       "poolId": "Ea8BXKie"
-    },
-    {
-      "protocol": "Polymarket",
-      "chain": "Polygon",
-      "chainId": "matic",
-      "type": "Prediction",
-      "rabbyType": "Yield",
-      "healthRate": null,
-      "supplied": [
-        {
-          "token": "USDC",
-          "amount": 324.96,
-          "usd": 324.96
-        }
-      ],
-      "borrowed": [],
-      "description": "NBA predictions",
-      "supSum": 324.96,
-      "borSum": 0,
-      "rewSum": 0,
-      "net": 324.96,
-      "poolId": "polymarket"
     }
   ],
   "walletTokens": [
@@ -600,7 +578,7 @@
       "token": "WXPL",
       "id": "0x6100e367285b01f48d07953803a2d8dca5d19873",
       "amount": 944.4596291052696,
-      "usd": 82.73466350962161
+      "usd": 82.64021754671109
     }
   ]
 }

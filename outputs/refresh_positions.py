@@ -2198,7 +2198,7 @@ def main():
 
     # Polymarket — hardcoded USDC position on Polygon (prediction market)
     # Update POLYMARKET_USD env var or this default when positions change.
-    polymarket_usd = float(os.environ.get("POLYMARKET_USD") or 324.96)
+    polymarket_usd = float(os.environ.get("POLYMARKET_USD") or 0)
     if polymarket_usd > 0:
         pm_pos = {
             "_supSum": polymarket_usd, "_borSum": 0, "_rewSum": 0, "_net": polymarket_usd,
