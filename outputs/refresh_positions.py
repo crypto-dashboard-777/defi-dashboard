@@ -26,7 +26,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 WALLET     = os.environ.get("DEBANK_WALLET", "0xe16be042f9433779909a972669be3a2003956348")
-SOL_WALLET = os.environ.get("SOL_WALLET", "6QcRFrTcHCZgKdtX83iusXVBvcz3vrwiKayREZtJBx5o")
+SOL_WALLET = os.environ.get("SOL_WALLET", "36RwE5mMFqZhkMrC445AYXSQpj8xDtRLC3QfnNx18e1F")
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Rabby/1.0"
 FILTER_USD = 50.0
 RABBY_BASE = "https://api.rabby.io/v1"
