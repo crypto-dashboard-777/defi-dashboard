@@ -268,24 +268,64 @@ def position_base_key(p: dict) -> str:
 
 
 def fuzzy_match(current_p: dict, candidates: list) -> dict | None:
-    """Exact match first; fallback to same protocol+pool where current supply tokens
-    are a subset of historical supply tokens (handles token withdrawals from a position,
-    e.g. GHO removed from WMNT+syrupUSDT+GHO → WMNT+syrupUSDT).
-    Only returns a fallback if exactly one candidate qualifies (avoids ambiguity)."""
+    """Exact match first; then progressively looser tiers for wallet/protocol migrations.
+
+    Tier 1 — same protocol+pool, current supply tokens ⊆ historical supply tokens
+             (handles token withdrawals, e.g. GHO removed from a multi-token position).
+    Tier 2 — same protocol+chain, identical supply+borrow token sets
+             (handles same-protocol wallet migrations, e.g. old Loopscale → new Loopscale).
+    Tier 3 — same chain, identical supply+borrow token sets, any protocol
+             (handles cross-protocol migrations where collateral is unchanged,
+              e.g. ONyc/USDC moved from Loopscale to Kamino).
+    Only returns a match when exactly one candidate qualifies at each tier.
+    """
     key = position_key(current_p)
     exact = next((q for q in candidates if position_key(q) == key), None)
     if exact is not None:
         return exact
-    cur_base = position_base_key(current_p)
-    cur_sup = {l["token"].upper() for l in current_p.get("supplied", [])}
+
+    cur_chain = current_p.get("chain", "") or current_p.get("chainId", "")
+    cur_sup   = {l["token"].upper() for l in current_p.get("supplied", [])}
+    cur_bor   = {l["token"].upper() for l in current_p.get("borrowed", [])}
     if not cur_sup:
         return None
+
+    # Tier 1: same protocol+pool, subset supply tokens
+    cur_base = position_base_key(current_p)
     subset_matches = [
         q for q in candidates
         if position_base_key(q) == cur_base
         and cur_sup.issubset({l["token"].upper() for l in q.get("supplied", [])})
     ]
-    return subset_matches[0] if len(subset_matches) == 1 else None
+    if len(subset_matches) == 1:
+        return subset_matches[0]
+
+    # Tier 2: same protocol+chain, identical supply+borrow token sets (wallet migration)
+    cur_proto = current_p.get("protocol", "")
+    t2 = [
+        q for q in candidates
+        if q.get("protocol", "") == cur_proto
+        and (q.get("chain", "") or q.get("chainId", "")) == cur_chain
+        and {l["token"].upper() for l in q.get("supplied", [])} == cur_sup
+        and {l["token"].upper() for l in q.get("borrowed", [])} == cur_bor
+    ]
+    if len(t2) == 1:
+        return t2[0]
+    if len(t2) > 1:
+        cur_net = current_p.get("_net") or current_p.get("net") or 0
+        return min(t2, key=lambda q: abs((q.get("_net") or q.get("net") or 0) - cur_net))
+
+    # Tier 3: any protocol, same chain+supply+borrow token sets (cross-protocol migration)
+    t3 = [
+        q for q in candidates
+        if (q.get("chain", "") or q.get("chainId", "")) == cur_chain
+        and {l["token"].upper() for l in q.get("supplied", [])} == cur_sup
+        and {l["token"].upper() for l in q.get("borrowed", [])} == cur_bor
+    ]
+    if len(t3) == 1:
+        return t3[0]
+
+    return None
 
 
 def position_key(p: dict) -> str:
