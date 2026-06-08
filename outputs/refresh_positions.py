@@ -2035,11 +2035,124 @@ def loopscale_positions(meta: dict | None = None) -> tuple[list[dict], float]:
     return positions, total_net
 
 
+def kamino_positions() -> tuple[list[dict], float]:
+    """Fetch Kamino lending obligations across all markets via REST API.
+
+    Scans all Kamino markets in parallel, finds user obligations, then
+    fetches clean loan data from /klend/loans/{obligationAddress}.
+
+    Returns (positions, total_net_usd).
+    """
+    import concurrent.futures
+
+    # 1. Get all Kamino markets
+    markets_url = "https://api.kamino.finance/v2/kamino-market?env=mainnet-beta"
+    req = urllib.request.Request(
+        markets_url, headers={"User-Agent": UA, "Accept": "application/json"}
+    )
+    with urllib.request.urlopen(req, timeout=15) as r:
+        markets = json.loads(r.read())
+    market_addrs = [m["lendingMarket"] for m in markets if m.get("lendingMarket")]
+    print(f"[refresh] Kamino: scanning {len(market_addrs)} markets for {SOL_WALLET[:8]}…")
+
+    # 2. Check each market in parallel for user obligations
+    def _check_market(market):
+        url = (f"https://api.kamino.finance/kamino-market/{market}/users"
+               f"/{SOL_WALLET}/obligations?env=mainnet-beta")
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=10) as r:
+                obs = json.loads(r.read())
+            return obs if isinstance(obs, list) and obs else []
+        except Exception:
+            return []
+
+    all_obligations = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+        for obs in ex.map(_check_market, market_addrs):
+            all_obligations.extend(obs)
+
+    if not all_obligations:
+        print("[refresh] Kamino: no obligations found")
+        return [], 0.0
+
+    print(f"[refresh] Kamino: found {len(all_obligations)} obligation(s)")
+
+    # 3. For each obligation fetch clean loan data from /klend/loans/{addr}
+    positions: list[dict] = []
+    total_net = 0.0
+
+    for ob in all_obligations:
+        ob_addr = ob.get("obligationAddress", "")
+        if not ob_addr:
+            continue
+        loan_url = f"https://api.kamino.finance/klend/loans/{ob_addr}?env=mainnet-beta"
+        try:
+            req = urllib.request.Request(loan_url, headers={"User-Agent": UA, "Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=12) as r:
+                loan = json.loads(r.read())
+        except Exception as e:
+            print(f"[refresh] Kamino loan {ob_addr[:8]} fetch failed: {e}", file=sys.stderr)
+            continue
+
+        info = loan.get("loanInfo") or {}
+        dep_entries = (info.get("collateral") or {}).get("deposits") or []
+        bor_entries = (info.get("debt") or {}).get("borrows") or []
+
+        sup_sum = sum(float(d.get("tokenValue") or 0) for d in dep_entries)
+        bor_sum = sum(float(b.get("tokenValue") or 0) for b in bor_entries)
+        net_usd = sup_sum - bor_sum
+
+        supplied = [{"token": d.get("tokenName") or d.get("tokenMint", "")[:6],
+                     "amount": float(d.get("tokenAmount") or 0),
+                     "usd":    float(d.get("tokenValue") or 0)}
+                    for d in dep_entries if float(d.get("tokenAmount") or 0) > 0]
+        borrowed = [{"token": b.get("tokenName") or b.get("tokenMint", "")[:6],
+                     "amount": float(b.get("tokenAmount") or 0),
+                     "usd":    float(b.get("tokenValue") or 0)}
+                    for b in bor_entries if float(b.get("tokenAmount") or 0) > 0]
+
+        cur_ltv  = float(info.get("currentLtv") or 0)
+        liq_ltv  = float(info.get("liquidationLtv") or 0)
+        health_rate = round(liq_ltv / cur_ltv, 4) if cur_ltv > 0 else None
+
+        positions.append({
+            "protocol":   "Kamino",
+            "chain":      "Solana",
+            "chainId":    "sol",
+            "type":       "Lending",
+            "rabbyType":  "Lending",
+            "healthRate": health_rate,
+            "supplied":   supplied,
+            "borrowed":   borrowed,
+            "rewards":    [],
+            "description": f"Loan {ob_addr[:8]}",
+            "_supSum":  sup_sum,
+            "_borSum":  bor_sum,
+            "_rewSum":  0.0,
+            "_net":     net_usd,
+            "_poolId":  ob_addr[:8],
+            "_source":  "kamino-api",
+            "supSum":   sup_sum,
+            "borSum":   bor_sum,
+            "net":      net_usd,
+            "poolId":   ob_addr[:8],
+        })
+        total_net += net_usd
+        sup_syms = "+".join(s["token"] for s in supplied)
+        bor_syms = "+".join(b["token"] for b in borrowed)
+        print(f"[refresh]   Kamino {ob_addr[:8]}: "
+              f"sup={sup_syms} ${sup_sum:,.0f}  bor={bor_syms} ${bor_sum:,.0f}  "
+              f"net=${net_usd:,.0f}  health={health_rate}")
+
+    return positions, total_net
+
+
 def fetch_sol_defi_positions() -> tuple[list[dict], float]:
     """Primary entry-point for Solana DeFi positions.
 
-    Tries REST APIs first (Loopscale). Falls back to headless Playwright scrape
-    only if REST APIs return nothing.
+    Tries REST APIs first (Loopscale + Kamino). Falls back to headless
+    Playwright scrape only if REST APIs return nothing.
 
     Returns (positions, total_sol_net_usd).
     """
@@ -2059,6 +2172,14 @@ def fetch_sol_defi_positions() -> tuple[list[dict], float]:
         total_net += ls_net
     except Exception as e:
         print(f"[refresh] Loopscale REST API failed: {e}", file=sys.stderr)
+
+    # ── Kamino REST API ─────────────────────────────────────────────
+    try:
+        km_pos, km_net = kamino_positions()
+        positions.extend(km_pos)
+        total_net += km_net
+    except Exception as e:
+        print(f"[refresh] Kamino REST API failed: {e}", file=sys.stderr)
 
     if positions:
         print(f"[refresh] Solana DeFi via REST API: {len(positions)} positions, net=${total_net:,.0f}")
