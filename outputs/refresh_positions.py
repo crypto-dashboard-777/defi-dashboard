@@ -2311,31 +2311,48 @@ def main():
     except Exception as e:
         print(f"[refresh] Solana fetch failed: {e}", file=sys.stderr)
 
+    def _cached_sol_positions() -> tuple[list[dict], float]:
+        """Last known Solana positions from the most recent snapshot."""
+        _snap_dir = Path(args.snapshots_dir)
+        _prev_snaps = sorted(f for f in _snap_dir.glob("2*.json")
+                             if f.name not in SNAPSHOT_SKIP)
+        if not _prev_snaps:
+            return [], 0.0
+        _prev = json.loads(_prev_snaps[-1].read_text())
+        _sol_pos = [p for p in _prev.get("positions", []) if p.get("chainId") == "sol"]
+        # Convert snapshot format back to internal format
+        for p in _sol_pos:
+            p["_supSum"] = p.get("supSum", 0)
+            p["_borSum"] = p.get("borSum", 0)
+            p["_rewSum"] = p.get("rewSum", 0)
+            p["_net"]    = p.get("net", 0)
+            p["_poolId"] = p.get("poolId", "")
+            p["_source"] = "jupiter-cached"
+        return _sol_pos, sum(p["_net"] for p in _sol_pos)
+
     sol_defi_positions, sol_net_worth = [], 0.0
     try:
         sol_defi_positions, sol_net_worth = fetch_sol_defi_positions()
+        # Integrity guard: a "successful" fetch that returns nothing while the
+        # previous snapshot held real Solana value means an API or config
+        # failure (wrong wallet, endpoint change), not a real withdrawal.
+        # Carry the cached positions forward instead of silently dropping $.
+        if not sol_defi_positions:
+            _cached, _cached_net = _cached_sol_positions()
+            if _cached_net > 1000:
+                print(f"[refresh] WARNING: Solana fetch returned 0 positions but "
+                      f"previous snapshot had ${_cached_net:,.0f} — using "
+                      f"{len(_cached)} cached positions", file=sys.stderr)
+                sol_defi_positions, sol_net_worth = _cached, _cached_net
         positions = positions + sol_defi_positions
     except Exception as e:
         print(f"[refresh] Jupiter scrape failed: {e}", file=sys.stderr)
         # Fall back to last known Solana positions from previous snapshot
         try:
-            _snap_dir = Path(args.snapshots_dir)
-            _prev_snaps = sorted(f for f in _snap_dir.glob("2*.json"))
-            if _prev_snaps:
-                _prev = json.loads(_prev_snaps[-1].read_text())
-                _sol_pos = [p for p in _prev.get("positions", []) if p.get("chainId") == "sol"]
-                if _sol_pos:
-                    # Convert snapshot format back to internal format
-                    for p in _sol_pos:
-                        p["_supSum"] = p.get("supSum", 0)
-                        p["_borSum"] = p.get("borSum", 0)
-                        p["_rewSum"] = p.get("rewSum", 0)
-                        p["_net"]    = p.get("net", 0)
-                        p["_poolId"] = p.get("poolId", "")
-                        p["_source"] = "jupiter-cached"
-                    positions = positions + _sol_pos
-                    sol_net_worth = sum(p["_net"] for p in _sol_pos)
-                    print(f"[refresh] Using {len(_sol_pos)} cached Solana positions (sol_net=${sol_net_worth:,.0f})")
+            _sol_pos, sol_net_worth = _cached_sol_positions()
+            if _sol_pos:
+                positions = positions + _sol_pos
+                print(f"[refresh] Using {len(_sol_pos)} cached Solana positions (sol_net=${sol_net_worth:,.0f})")
         except Exception as e2:
             print(f"[refresh] Solana cache fallback failed: {e2}", file=sys.stderr)
 
