@@ -118,7 +118,7 @@
       "chainId": "eth",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0477,
+      "healthRate": 1.0476,
       "supplied": [
         {
           "token": "sfrxUSD",
@@ -146,7 +146,7 @@
       "chainId": "eth",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0363,
+      "healthRate": 1.0359,
       "supplied": [
         {
           "token": "sUSDe",
@@ -174,7 +174,7 @@
       "chainId": "mnt",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0261,
+      "healthRate": 1.0262,
       "supplied": [
         {
           "token": "sUSDe",
@@ -202,7 +202,7 @@
       "chainId": "monad",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0482,
+      "healthRate": 1.0483,
       "supplied": [
         {
           "token": "USDC",
@@ -225,12 +225,34 @@
       "poolId": "0x7a9324e8f270413fa2e458f5831226d99c7477cd"
     },
     {
+      "protocol": "Merkl",
+      "chain": "Monad",
+      "chainId": "monad",
+      "type": "Yield",
+      "rabbyType": "Rewards",
+      "healthRate": null,
+      "supplied": [
+        {
+          "token": "WMON",
+          "amount": 2424.861271500671,
+          "usd": 51.728353074288066
+        }
+      ],
+      "borrowed": [],
+      "description": "",
+      "supSum": 51.728353074288066,
+      "borSum": 0,
+      "rewSum": 0,
+      "net": 51.728353074288066,
+      "poolId": "0x3ef3d8ba38ebe18db133cec108f4d14ce00dd9ae"
+    },
+    {
       "protocol": "Morpho",
       "chain": "Ethereum",
       "chainId": "eth",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.4551,
+      "healthRate": 1.3729,
       "supplied": [
         {
           "token": "PT-apyUSD-18JUN2026",
@@ -241,8 +263,8 @@
       "borrowed": [
         {
           "token": "USDC",
-          "amount": 165417.11250779504,
-          "usd": 165532.98559771347
+          "amount": 165474.77342105433,
+          "usd": 165590.68690188567
         }
       ],
       "description": "",
@@ -258,7 +280,7 @@
       "chainId": "eth",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0811,
+      "healthRate": 1.0812,
       "supplied": [
         {
           "token": "PRIME",
@@ -286,7 +308,7 @@
       "chainId": "eth",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0536,
+      "healthRate": 1.0537,
       "supplied": [
         {
           "token": "siUSD",
@@ -314,7 +336,7 @@
       "chainId": "eth",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0641,
+      "healthRate": 1.0649,
       "supplied": [
         {
           "token": "mF-ONE",
@@ -325,8 +347,8 @@
       "borrowed": [
         {
           "token": "USDC",
-          "amount": 128724.63155431896,
-          "usd": 128814.80191565993
+          "amount": 128738.23950558627,
+          "usd": 128828.41939916571
         }
       ],
       "description": "",
@@ -342,7 +364,7 @@
       "chainId": "eth",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0524,
+      "healthRate": 1.0525,
       "supplied": [
         {
           "token": "sNUSD",
@@ -447,7 +469,7 @@
         {
           "token": "ONyc",
           "amount": 206374.62198892,
-          "usd": 230002.32306542783
+          "usd": 230072.61087190438
         }
       ],
       "borrowed": [
