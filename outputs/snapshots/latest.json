@@ -1,13 +1,13 @@
 {
   "wallet": "0xe16be042f9433779909a972669be3a2003956348",
-  "capturedAt": "2026-07-23 03:15:43",
+  "capturedAt": "2026-07-23 13:13:39",
   "source": "Rabby API + Jupiter",
-  "reportedTotal": 531364.046382944,
+  "reportedTotal": 532234.5920178348,
   "totals": {
-    "sup": 2491657.983961612,
-    "bor": 2048499.0431317585,
-    "net": 443158.9408298535,
-    "count": 14,
+    "sup": 2527454.7494342118,
+    "bor": 2071148.7627499336,
+    "net": 456305.9866842781,
+    "count": 15,
     "lowest_hr": 1.0288,
     "walletTokensTotal": 0
   },
@@ -22,27 +22,27 @@
       "supplied": [
         {
           "token": "USDC",
-          "amount": 115.447933,
-          "usd": 115.50568584292145
+          "amount": 115.451923,
+          "usd": 115.50967783891943
         },
         {
           "token": "mGLOBAL",
           "amount": 127215.9,
-          "usd": 128013.28086075035
+          "usd": 128026.08987424454
         }
       ],
       "borrowed": [
         {
           "token": "USDC",
-          "amount": 95815.472844,
-          "usd": 95863.40454627313
+          "amount": 95821.147502,
+          "usd": 95869.08204302151
         }
       ],
       "description": "",
-      "supSum": 128128.78654659327,
-      "borSum": 95863.40454627313,
+      "supSum": 128141.59955208345,
+      "borSum": 95869.08204302151,
       "rewSum": 0,
-      "net": 32265.38200032014,
+      "net": 32272.517509061945,
       "poolId": "0xae05cd22df81871bc7cc2a04becfb516bfe332c8"
     },
     {
@@ -72,22 +72,22 @@
       "chain": "Ethereum",
       "chainId": "eth",
       "type": "Yield",
-      "rabbyType": "Staked",
+      "rabbyType": "Locked",
       "healthRate": null,
       "supplied": [
         {
           "token": "USDe",
-          "amount": 30698.46378153282,
-          "usd": 30719.95270617989
+          "amount": 30698.502155511967,
+          "usd": 30713.85140658972
         }
       ],
       "borrowed": [],
-      "description": "sUSDe",
-      "supSum": 30719.95270617989,
+      "description": "",
+      "supSum": 30713.85140658972,
       "borSum": 0,
       "rewSum": 0,
-      "net": 30719.95270617989,
-      "poolId": "0x9d39a5de30e57443bff2a8307a4256c8797a3497"
+      "net": 30713.85140658972,
+      "poolId": "0x9d39a5de30e57443bff2a8307a4256c8797a3497:pending"
     },
     {
       "protocol": "Euler",
@@ -95,26 +95,26 @@
       "chainId": "eth",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0459,
+      "healthRate": 1.046,
       "supplied": [
         {
           "token": "PT-cUSD-23JUL2026",
           "amount": 111191.91568157828,
-          "usd": 111185.19524219447
+          "usd": 111176.36660408936
         }
       ],
       "borrowed": [
         {
           "token": "USDe",
-          "amount": 92424.08245694173,
-          "usd": 92488.77931466159
+          "amount": 92426.02224799483,
+          "usd": 92472.23525911882
         }
       ],
       "description": "Position 1",
-      "supSum": 111185.19524219447,
-      "borSum": 92488.77931466159,
+      "supSum": 111176.36660408936,
+      "borSum": 92472.23525911882,
       "rewSum": 0,
-      "net": 18696.415927532886,
+      "net": 18704.131344970534,
       "poolId": "0x0c9a3dd6b8f28529d72d7f9ce918d493519ee383"
     },
     {
@@ -123,26 +123,26 @@
       "chainId": "eth",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.052,
+      "healthRate": 1.0519,
       "supplied": [
         {
           "token": "reUSD",
           "amount": 279798.77646834165,
-          "usd": 305166.3226834576
+          "usd": 305210.0581932939
         }
       ],
       "borrowed": [
         {
           "token": "GHO",
-          "amount": 261058.1138861182,
-          "usd": 261084.2196975068
+          "amount": 261075.39887109539,
+          "usd": 261127.6139508696
         }
       ],
       "description": "",
-      "supSum": 305166.3226834576,
-      "borSum": 261084.2196975068,
+      "supSum": 305210.0581932939,
+      "borSum": 261127.6139508696,
       "rewSum": 0,
-      "net": 44082.10298595077,
+      "net": 44082.44424242433,
       "poolId": "0x324c5dc1fc42c7a4d43d92df1eba58a54d13bf2d"
     },
     {
@@ -156,21 +156,21 @@
         {
           "token": "sfrxUSD",
           "amount": 275773.43553,
-          "usd": 331767.7911422988
+          "usd": 331782.9841767851
         }
       ],
       "borrowed": [
         {
           "token": "crvUSD",
-          "amount": 308094.80553549586,
-          "usd": 308166.9653837042
+          "amount": 308104.9247668028,
+          "usd": 308190.3844839666
         }
       ],
       "description": "",
-      "supSum": 331767.7911422988,
-      "borSum": 308166.9653837042,
+      "supSum": 331782.9841767851,
+      "borSum": 308190.3844839666,
       "rewSum": 0,
-      "net": 23600.825758594554,
+      "net": 23592.599692818476,
       "poolId": "0x3de37c38739dfb83b7a902842bf5393040f7bf50"
     },
     {
@@ -184,26 +184,26 @@
         {
           "token": "WMNT",
           "amount": 528.9790123127424,
-          "usd": 221.21902294918888
+          "usd": 216.58410884330462
         },
         {
           "token": "sUSDe",
           "amount": 255926.543251,
-          "usd": 317332.504339606
+          "usd": 317294.05123752815
         }
       ],
       "borrowed": [
         {
           "token": "USDC",
-          "amount": 283698.172002,
-          "usd": 283840.09204802394
+          "amount": 283710.256262,
+          "usd": 283852.1823531766
         }
       ],
       "description": "",
-      "supSum": 317553.72336255515,
-      "borSum": 283840.09204802394,
+      "supSum": 317510.63534637145,
+      "borSum": 283852.1823531766,
       "rewSum": 0,
-      "net": 33713.6313145312,
+      "net": 33658.452993194864,
       "poolId": "0x458f293454fe0d67ec0655f3672301301dd51422"
     },
     {
@@ -212,26 +212,26 @@
       "chainId": "monad",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0499,
+      "healthRate": 1.05,
       "supplied": [
         {
           "token": "USDC",
-          "amount": 218634.12937169406,
-          "usd": 218743.50112225514
+          "amount": 218649.74433187363,
+          "usd": 218759.1238938205
         }
       ],
       "borrowed": [
         {
           "token": "USDC",
-          "amount": 187409.915729,
-          "usd": 187503.66756278137
+          "amount": 187421.018239,
+          "usd": 187514.77562681338
         }
       ],
       "description": "Position 1",
-      "supSum": 218743.50112225514,
-      "borSum": 187503.66756278137,
+      "supSum": 218759.1238938205,
+      "borSum": 187514.77562681338,
       "rewSum": 0,
-      "net": 31239.833559473773,
+      "net": 31244.348267007124,
       "poolId": "0x7a9324e8f270413fa2e458f5831226d99c7477cd"
     },
     {
@@ -240,26 +240,26 @@
       "chainId": "eth",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0836,
+      "healthRate": 1.0837,
       "supplied": [
         {
           "token": "PRIME",
           "amount": 114853.868672,
-          "usd": 120636.99809123414
+          "usd": 120636.79804789175
         }
       ],
       "borrowed": [
         {
           "token": "PYUSD",
-          "amount": 95682.48779090194,
-          "usd": 95711.19253723921
+          "amount": 95688.54533771558,
+          "usd": 95736.38961038443
         }
       ],
       "description": "",
-      "supSum": 120636.99809123414,
-      "borSum": 95711.19253723921,
+      "supSum": 120636.79804789175,
+      "borSum": 95736.38961038443,
       "rewSum": 0,
-      "net": 24925.805553994927,
+      "net": 24900.408437507314,
       "poolId": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending"
     },
     {
@@ -268,7 +268,7 @@
       "chainId": "eth",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.1412,
+      "healthRate": 1.1411,
       "supplied": [
         {
           "token": "mF-ONE",
@@ -279,15 +279,15 @@
       "borrowed": [
         {
           "token": "USDC",
-          "amount": 121472.91754750241,
-          "usd": 121533.68438969724
+          "amount": 121483.36335386027,
+          "usd": 121544.13542157105
         }
       ],
       "description": "",
       "supSum": 164229.7555177589,
-      "borSum": 121533.68438969724,
+      "borSum": 121544.13542157105,
       "rewSum": 0,
-      "net": 42696.07112806165,
+      "net": 42685.62009618785,
       "poolId": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending"
     },
     {
@@ -301,21 +301,49 @@
         {
           "token": "sNUSD",
           "amount": 73161.41411829802,
-          "usd": 77658.45139702126
+          "usd": 77658.36639223507
         }
       ],
       "borrowed": [
         {
           "token": "USDC",
-          "amount": 67489.8881202316,
-          "usd": 67523.64994520419
+          "amount": 67493.1761101285,
+          "usd": 67526.93957991844
         }
       ],
       "description": "",
-      "supSum": 77658.45139702126,
-      "borSum": 67523.64994520419,
+      "supSum": 77658.36639223507,
+      "borSum": 67526.93957991844,
       "rewSum": 0,
-      "net": 10134.801451817068,
+      "net": 10131.426812316626,
+      "poolId": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending"
+    },
+    {
+      "protocol": "Morpho",
+      "chain": "Ethereum",
+      "chainId": "eth",
+      "type": "Lending",
+      "rabbyType": "Lending",
+      "healthRate": 1.2568,
+      "supplied": [
+        {
+          "token": "reUSDe",
+          "amount": 26385.02207319259,
+          "usd": 35709.01387999836
+        }
+      ],
+      "borrowed": [
+        {
+          "token": "USDC",
+          "amount": 22502.84026830176,
+          "usd": 22514.097316960237
+        }
+      ],
+      "description": "",
+      "supSum": 35709.01387999836,
+      "borSum": 22514.097316960237,
+      "rewSum": 0,
+      "net": 13194.916563038125,
       "poolId": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb:lending"
     },
     {
@@ -324,26 +352,26 @@
       "chainId": "plasma",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0448,
+      "healthRate": 1.0449,
       "supplied": [
         {
           "token": "sUSDai",
           "amount": 249570.01805246226,
-          "usd": 274491.8865008961
+          "usd": 274533.78861103964
         }
       ],
       "borrowed": [
         {
           "token": "GHO",
-          "amount": 236561.73913459372,
-          "usd": 236457.05086669492
+          "amount": 236576.3807717327,
+          "usd": 236471.95220918808
         }
       ],
       "description": "",
-      "supSum": 274491.8865008961,
-      "borSum": 236457.05086669492,
+      "supSum": 274533.78861103964,
+      "borSum": 236471.95220918808,
       "rewSum": 0,
-      "net": 38034.835634201154,
+      "net": 38061.83640185156,
       "poolId": "0x324c5dc1fc42c7a4d43d92df1eba58a54d13bf2d"
     },
     {
@@ -352,25 +380,25 @@
       "chainId": "sol",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.1407,
+      "healthRate": 1.1406,
       "supplied": [
         {
           "token": "ONyc",
           "amount": 187374.62198892,
-          "usd": 211124.42652837196
+          "usd": 211124.4268463421
         }
       ],
       "borrowed": [
         {
           "token": "USDC",
-          "amount": 138837.86904236837,
-          "usd": 138815.65498332158
+          "amount": 138849.3198426997,
+          "usd": 138829.68175166432
         }
       ],
       "description": "Loan C546qjMb",
-      "supSum": 211124.42652837196,
-      "borSum": 138815.65498332158,
-      "net": 72308.77154505037,
+      "supSum": 211124.4268463421,
+      "borSum": 138829.68175166432,
+      "net": 72294.74509467778,
       "poolId": "C546qjMb",
       "rewSum": 0.0
     },
@@ -380,25 +408,25 @@
       "chainId": "sol",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0559,
+      "healthRate": 1.0561,
       "supplied": [
         {
           "token": "PRIME",
           "amount": 176343.762338,
-          "usd": 185091.06016231645
+          "usd": 185107.8480074333
         }
       ],
       "borrowed": [
         {
           "token": "USDS",
-          "amount": 159510.68185665045,
-          "usd": 159510.68185665045
+          "amount": 159520.02871767004,
+          "usd": 159499.2931432806
         }
       ],
       "description": "Loan 94wfA6ZM",
-      "supSum": 185091.06016231645,
-      "borSum": 159510.68185665045,
-      "net": 25580.378305666003,
+      "supSum": 185107.8480074333,
+      "borSum": 159499.2931432806,
+      "net": 25608.554864152684,
       "poolId": "94wfA6ZM",
       "rewSum": 0.0
     }
