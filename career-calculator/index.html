@@ -1,0 +1,692 @@
+<title>Anesthesiology or Pain Medicine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F6F4EF;
+    --surface: #FFFFFF;
+    --surface-2: #FBFAF6;
+    --ink: #181B1D;
+    --ink-muted: #64696C;
+    --ink-faint: #94989A;
+    --line: #DFDAD0;
+    --line-strong: #C7C1B3;
+    --anes: #1E6F78;
+    --anes-strong: #145760;
+    --anes-soft: #E1EEEF;
+    --pain: #B96A28;
+    --pain-strong: #8F4F1B;
+    --pain-soft: #F4E6D5;
+    --focus: #2A5C8A;
+    --shadow: 0 1px 2px rgba(24,27,29,0.04), 0 8px 24px -16px rgba(24,27,29,0.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121514;
+      --surface: #191D1C;
+      --surface-2: #1E2221;
+      --ink: #ECE9E2;
+      --ink-muted: #A2A6A3;
+      --ink-faint: #6F7472;
+      --line: #2C312F;
+      --line-strong: #3B413E;
+      --anes: #5FC2CB;
+      --anes-strong: #8AD6DD;
+      --anes-soft: rgba(95,194,203,0.14);
+      --pain: #E2954E;
+      --pain-strong: #EFB57E;
+      --pain-soft: rgba(226,149,78,0.14);
+      --focus: #7FB2E0;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -16px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121514;
+    --surface: #191D1C;
+    --surface-2: #1E2221;
+    --ink: #ECE9E2;
+    --ink-muted: #A2A6A3;
+    --ink-faint: #6F7472;
+    --line: #2C312F;
+    --line-strong: #3B413E;
+    --anes: #5FC2CB;
+    --anes-strong: #8AD6DD;
+    --anes-soft: rgba(95,194,203,0.14);
+    --pain: #E2954E;
+    --pain-strong: #EFB57E;
+    --pain-soft: rgba(226,149,78,0.14);
+    --focus: #7FB2E0;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -16px rgba(0,0,0,0.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 24px 72px;
+  }
+  .num { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  header.hero { margin-bottom: 32px; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--anes), var(--pain));
+    flex: none;
+  }
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(28px, 4.4vw, 40px);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+    max-width: 15ch;
+  }
+  .dek {
+    color: var(--ink-muted);
+    max-width: 62ch;
+    font-size: 15.5px;
+    margin: 0;
+  }
+  .dek b { color: var(--ink); font-weight: 600; }
+
+  section { margin-top: 40px; }
+  h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 19px;
+    margin: 0 0 4px;
+    letter-spacing: -0.005em;
+  }
+  .section-note { color: var(--ink-muted); font-size: 13.5px; margin: 0 0 18px; max-width: 62ch; }
+
+  /* Readout */
+  .readout {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 26px 28px;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 28px;
+  }
+  @media (max-width: 620px) { .readout { grid-template-columns: 1fr; } }
+  .readout-stat { display: flex; flex-direction: column; gap: 6px; }
+  .readout-stat + .readout-stat {
+    border-left: 1px solid var(--line);
+    padding-left: 28px;
+  }
+  @media (max-width: 620px) {
+    .readout-stat + .readout-stat { border-left: none; border-top: 1px solid var(--line); padding-left: 0; padding-top: 18px; }
+  }
+  .readout-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .readout-value {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: clamp(26px, 3.6vw, 34px);
+    letter-spacing: -0.01em;
+  }
+  .readout-value.anes { color: var(--anes-strong); }
+  .readout-value.pain { color: var(--pain-strong); }
+  .readout-sub { color: var(--ink-muted); font-size: 13px; }
+
+  /* Controls */
+  .controls-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+  }
+  @media (max-width: 700px) { .controls-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .controls-grid { grid-template-columns: 1fr; } }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .field label .fval { font-family: "IBM Plex Mono", monospace; color: var(--ink); font-weight: 500; }
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line-strong);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: var(--focus);
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--focus);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: var(--focus);
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--focus);
+    cursor: pointer;
+  }
+  input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .checkfield { flex-direction: row; align-items: center; gap: 8px; }
+  .checkfield input { width: 15px; height: 15px; accent-color: var(--focus); }
+  .checkfield label { font-size: 13px; color: var(--ink); }
+
+  .paths-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+  }
+  @media (max-width: 680px) { .paths-grid { grid-template-columns: 1fr; } }
+  .path-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px 22px 22px;
+    box-shadow: var(--shadow);
+    border-top: 3px solid var(--path-color);
+  }
+  .path-card.anes { --path-color: var(--anes); }
+  .path-card.pain { --path-color: var(--pain); }
+  .path-title {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 17px;
+    margin: 0 0 2px;
+    color: var(--path-color);
+  }
+  .path-sub { font-size: 12.5px; color: var(--ink-muted); margin: 0 0 16px; }
+  .path-card .field { margin-top: 14px; }
+  .path-card .field:first-of-type { margin-top: 0; }
+
+  /* Chart sections */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 24px 10px;
+    box-shadow: var(--shadow);
+  }
+  .legend { display: flex; gap: 20px; margin: 2px 0 10px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-muted); }
+  .legend-swatch { width: 12px; height: 3px; border-radius: 2px; }
+  svg.chart { display: block; width: 100%; height: auto; overflow: visible; }
+  .axis-label { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; fill: var(--ink-faint); }
+  .gridline { stroke: var(--line); stroke-width: 1; }
+  .zeroline { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+
+  /* Table */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; }
+  thead th {
+    text-align: right;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; background: var(--surface);
+  }
+  thead th:first-child, tbody td:first-child { text-align: left; }
+  tbody td {
+    text-align: right;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr.milestone td { background: var(--surface-2); font-weight: 600; }
+  td.pos { color: var(--anes-strong); }
+  td.neg { color: var(--pain-strong); }
+
+  footer.assumptions {
+    margin-top: 44px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-faint);
+    font-size: 12.5px;
+    line-height: 1.6;
+    max-width: 68ch;
+  }
+  footer.assumptions strong { color: var(--ink-muted); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .readout, .controls-grid, .path-card, .chart-card, .table-scroll { transition: box-shadow 0.15s ease; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Career economics · post-tax, New York</div>
+    <h1>Anesthesiology or Pain Medicine</h1>
+    <p class="dek">She has three years of residency left. From here, finish out as a general <b>anesthesiologist</b>, or add a one‑year <b>pain fellowship</b> and build a practice that starts lower but compounds. This models take‑home pay after federal, NY state, and payroll tax, and what investing the yearly gap is worth over time.</p>
+  </header>
+
+  <section class="readout">
+    <div class="readout-stat">
+      <span class="readout-label">Net worth edge after <span id="horizonEcho" class="fval">20</span> years</span>
+      <span class="readout-value" id="advantageValue">—</span>
+      <span class="readout-sub" id="advantageSub">calculating…</span>
+    </div>
+    <div class="readout-stat">
+      <span class="readout-label">Crossover point</span>
+      <span class="readout-value" id="crossoverValue" style="font-size: clamp(20px, 2.6vw, 26px);">—</span>
+      <span class="readout-sub" id="crossoverSub">calculating…</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Shared assumptions</h2>
+    <p class="section-note">Applies to both paths, starting from today.</p>
+    <div class="controls-grid">
+      <div class="field">
+        <label>Residency left, today <span class="fval" id="v_residency">3 yrs</span></label>
+        <input type="range" id="residency" min="1" max="5" step="1" value="3">
+      </div>
+      <div class="field">
+        <label>Pain fellowship length <span class="fval" id="v_fellowship">1 yr</span></label>
+        <input type="range" id="fellowship" min="1" max="2" step="1" value="1">
+      </div>
+      <div class="field">
+        <label>Trainee salary (both) <span class="fval" id="v_trainingSalary">$100k</span></label>
+        <input type="range" id="trainingSalary" min="70000" max="130000" step="5000" value="100000">
+      </div>
+      <div class="field">
+        <label>Raise after training, /yr <span class="fval" id="v_raiseRate">2.5%</span></label>
+        <input type="range" id="raiseRate" min="0" max="5" step="0.5" value="2.5">
+      </div>
+      <div class="field">
+        <label>Investment return, /yr <span class="fval" id="v_investReturn">7%</span></label>
+        <input type="range" id="investReturn" min="3" max="12" step="0.5" value="7">
+      </div>
+      <div class="field">
+        <label>Horizon, years from now <span class="fval" id="v_horizon">20 yrs</span></label>
+        <input type="range" id="horizon" min="10" max="30" step="1" value="20">
+      </div>
+      <div class="field checkfield" style="grid-column: span 1;">
+        <input type="checkbox" id="nycToggle">
+        <label for="nycToggle">Add NYC resident tax</label>
+      </div>
+    </div>
+
+    <div class="paths-grid">
+      <div class="path-card anes">
+        <p class="path-title">Anesthesiologist</p>
+        <p class="path-sub">Attending from year <span id="anesStartYearLabel">4</span>, flat specialty salary.</p>
+        <div class="field">
+          <label>Starting attending salary <span class="fval" id="v_anesStart">$500k</span></label>
+          <input type="range" id="anesStart" min="350000" max="650000" step="10000" value="500000">
+        </div>
+      </div>
+      <div class="path-card pain">
+        <p class="path-title">Pain specialist</p>
+        <p class="path-sub">Practice from year <span id="painStartYearLabel">5</span>, ramping to a year‑10 figure as her patient base builds.</p>
+        <div class="field">
+          <label>Starting practice income <span class="fval" id="v_painStart">$350k</span></label>
+          <input type="range" id="painStart" min="250000" max="450000" step="10000" value="350000">
+        </div>
+        <div class="field">
+          <label>Income at year 10 <span class="fval" id="v_painYear10">$900k</span></label>
+          <input type="range" id="painYear10" min="700000" max="1100000" step="10000" value="900000">
+        </div>
+        <div class="field">
+          <label>Practice overhead haircut <span class="fval" id="v_painOverhead">5%</span></label>
+          <input type="range" id="painOverhead" min="0" max="25" step="1" value="5">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Gross income by year</h2>
+    <p class="section-note">Before tax. The flat stretch is training; the anesthesiologist steps up first, the pain specialist ramps in later and further.</p>
+    <div class="chart-card">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch" style="background: var(--anes);"></span>Anesthesiologist</span>
+        <span class="legend-item"><span class="legend-swatch" style="background: var(--pain);"></span>Pain specialist</span>
+      </div>
+      <svg class="chart" id="incomeChart" viewBox="0 0 800 300"></svg>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cumulative wealth from investing the gap</h2>
+    <p class="section-note">Each year's post‑tax difference is invested and compounds; a negative balance means the pain specialist's higher pay has out‑earned the anesthesiologist's head start.</p>
+    <div class="chart-card">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch" style="background: var(--anes);"></span>Anesthesiology ahead</span>
+        <span class="legend-item"><span class="legend-swatch" style="background: var(--pain);"></span>Pain medicine ahead</span>
+      </div>
+      <svg class="chart" id="portfolioChart" viewBox="0 0 800 220"></svg>
+    </div>
+  </section>
+
+  <section>
+    <h2>Year by year, post-tax</h2>
+    <p class="section-note">Copy this into a spreadsheet or another model — every figure below is after federal, NY state, and payroll tax.</p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Year</th><th>Anesthesiologist</th><th>Pain specialist</th><th>Annual Δ</th><th>Invested, cumulative</th></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="assumptions">
+    <strong>How this is computed:</strong> federal and NY State income tax use 2024 single‑filer brackets and standard deductions; payroll tax applies 6.2% Social Security to the wage base plus 1.45% Medicare (0.9% additional above $200k). NYC tax, if toggled, is layered on the same NY taxable base. The pain specialist's income ramps linearly from her starting figure to the year‑10 figure, then grows at the shared raise rate; the overhead slider is an extra haircut for practice costs — malpractice, staff, self‑employment tax — not already reflected in the salary figures. Ignored: investment gains tax, retirement‑account sheltering, geographic salary variance, loan payments, and the non‑financial side of the decision — career satisfaction, patient relationships, autonomy — which this was never going to capture.
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  const FED = [[0.10,11600],[0.12,47150],[0.22,100525],[0.24,191950],[0.32,243725],[0.35,609350],[0.37,Infinity]];
+  const NYS = [[0.04,8500],[0.045,11700],[0.0525,13900],[0.0585,80650],[0.0625,215400],[0.0685,1077550],[0.0965,5000000],[0.103,25000000],[0.109,Infinity]];
+  const NYC = [[0.03078,12000],[0.03762,25000],[0.03819,50000],[0.03876,Infinity]];
+  const FED_STD = 14600, NYS_STD = 8000;
+  const SS_CAP = 168600, SS_RATE = 0.062, MED_RATE = 0.0145, MED_ADDL_THRESH = 200000, MED_ADDL_RATE = 0.009;
+
+  function bracketTax(taxable, table) {
+    let tax = 0, prev = 0;
+    for (const [rate, upTo] of table) {
+      if (taxable <= prev) break;
+      tax += (Math.min(taxable, upTo) - prev) * rate;
+      prev = upTo;
+    }
+    return tax;
+  }
+  function payrollTax(gross) {
+    const ss = Math.min(gross, SS_CAP) * SS_RATE;
+    const med = gross * MED_RATE + Math.max(0, gross - MED_ADDL_THRESH) * MED_ADDL_RATE;
+    return ss + med;
+  }
+  function postTax(gross, nycOn) {
+    const fed = bracketTax(Math.max(0, gross - FED_STD), FED);
+    const stateTaxable = Math.max(0, gross - NYS_STD);
+    const state = bracketTax(stateTaxable, NYS);
+    const nyc = nycOn ? bracketTax(stateTaxable, NYC) : 0;
+    return gross - fed - state - nyc - payrollTax(gross);
+  }
+
+  const $ = id => document.getElementById(id);
+  const fmtMoney = v => (v < 0 ? "-$" : "$") + Math.round(Math.abs(v)).toLocaleString("en-US");
+  const fmtCompact = v => {
+    const sign = v < 0 ? "-" : "";
+    const a = Math.abs(v);
+    if (a >= 1e6) return sign + "$" + (a / 1e6).toFixed(a % 1e6 === 0 ? 0 : 1) + "M";
+    if (a >= 1e3) return sign + "$" + Math.round(a / 1000) + "k";
+    return sign + "$" + Math.round(a);
+  };
+  function niceCeil(v) {
+    if (v <= 0) return 100000;
+    const exp = Math.floor(Math.log10(v));
+    const base = Math.pow(10, exp);
+    const norm = v / base;
+    let nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+    return nice * base;
+  }
+  function niceFloorNeg(v) {
+    if (v >= 0) return 0;
+    return -niceCeil(-v);
+  }
+
+  const ids = ["residency","fellowship","trainingSalary","raiseRate","investReturn","horizon","anesStart","painStart","painYear10","painOverhead"];
+  const els = {}; ids.forEach(id => els[id] = $(id));
+  const nycEl = $("nycToggle");
+
+  function readParams() {
+    return {
+      residency: +els.residency.value,
+      fellowship: +els.fellowship.value,
+      trainingSalary: +els.trainingSalary.value,
+      raiseRate: +els.raiseRate.value / 100,
+      investReturn: +els.investReturn.value / 100,
+      horizon: +els.horizon.value,
+      anesStart: +els.anesStart.value,
+      painStart: +els.painStart.value,
+      painYear10: +els.painYear10.value,
+      painOverhead: +els.painOverhead.value / 100,
+      nycOn: nycEl.checked,
+    };
+  }
+
+  function computeSeries(p) {
+    const totalTrainAnes = p.residency;
+    const totalTrainPain = p.residency + p.fellowship;
+    const rows = [];
+    for (let t = 1; t <= p.horizon; t++) {
+      let anesGross;
+      if (t <= totalTrainAnes) anesGross = p.trainingSalary;
+      else anesGross = p.anesStart * Math.pow(1 + p.raiseRate, t - totalTrainAnes - 1);
+
+      let painGross;
+      if (t <= totalTrainPain) painGross = p.trainingSalary;
+      else {
+        const rampStart = totalTrainPain + 1;
+        if (t <= rampStart || rampStart >= 10) painGross = p.painStart;
+        else if (t <= 10) {
+          const frac = (t - rampStart) / (10 - rampStart);
+          painGross = p.painStart + (p.painYear10 - p.painStart) * Math.min(1, Math.max(0, frac));
+        } else {
+          painGross = p.painYear10 * Math.pow(1 + p.raiseRate, t - 10);
+        }
+        painGross *= (1 - p.painOverhead);
+      }
+
+      const anesNet = postTax(anesGross, p.nycOn);
+      const painNet = postTax(painGross, p.nycOn);
+      rows.push({ t, anesGross, painGross, anesNet, painNet, diff: anesNet - painNet });
+    }
+    let portfolio = 0, crossoverYear = null, everPositive = false;
+    rows.forEach(r => {
+      portfolio = portfolio * (1 + p.investReturn) + r.diff;
+      r.portfolio = portfolio;
+      if (portfolio > 0) everPositive = true;
+      if (everPositive && portfolio < 0 && crossoverYear === null) crossoverYear = r.t;
+    });
+    return { rows, crossoverYear, totalTrainAnes, totalTrainPain, final: rows[rows.length - 1].portfolio };
+  }
+
+  function svgLine(points) {
+    return points.map((pt, i) => (i === 0 ? "M" : "L") + pt[0].toFixed(1) + "," + pt[1].toFixed(1)).join(" ");
+  }
+
+  function drawIncomeChart(res) {
+    const svg = $("incomeChart");
+    const W = 800, H = 300, L = 62, R = 16, T = 16, B = 30;
+    const plotW = W - L - R, plotH = H - T - B;
+    const rows = res.rows;
+    const maxY = niceCeil(Math.max(...rows.map(r => Math.max(r.anesGross, r.painGross))) * 1.05);
+    const n = rows.length;
+    const x = t => L + ((t - 1) / (n - 1 || 1)) * plotW;
+    const y = v => T + plotH - (v / maxY) * plotH;
+
+    let svgParts = [];
+    for (let i = 0; i <= 4; i++) {
+      const gy = T + (plotH * i) / 4;
+      const val = maxY * (1 - i / 4);
+      svgParts.push(`<line class="gridline" x1="${L}" y1="${gy.toFixed(1)}" x2="${W - R}" y2="${gy.toFixed(1)}"/>`);
+      svgParts.push(`<text class="axis-label" x="${L - 8}" y="${(gy + 3.5).toFixed(1)}" text-anchor="end">${fmtCompact(val)}</text>`);
+    }
+    const xTickStep = n > 20 ? 5 : n > 10 ? 2 : 1;
+    for (let t = 1; t <= n; t += xTickStep) {
+      svgParts.push(`<text class="axis-label" x="${x(t).toFixed(1)}" y="${H - 8}" text-anchor="middle">${t}</text>`);
+    }
+    svgParts.push(`<text class="axis-label" x="${(L + plotW / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" opacity="0"> </text>`);
+
+    const anesPts = rows.map(r => [x(r.t), y(r.anesGross)]);
+    const painPts = rows.map(r => [x(r.t), y(r.painGross)]);
+    svgParts.push(`<path d="${svgLine(painPts)}" fill="none" stroke="var(--pain)" stroke-width="2.25"/>`);
+    svgParts.push(`<path d="${svgLine(anesPts)}" fill="none" stroke="var(--anes)" stroke-width="2.25"/>`);
+
+    const anesEnd = anesPts[anesPts.length - 1], painEnd = painPts[painPts.length - 1];
+    svgParts.push(`<circle cx="${anesEnd[0].toFixed(1)}" cy="${anesEnd[1].toFixed(1)}" r="3.5" fill="var(--anes)"/>`);
+    svgParts.push(`<circle cx="${painEnd[0].toFixed(1)}" cy="${painEnd[1].toFixed(1)}" r="3.5" fill="var(--pain)"/>`);
+
+    svg.innerHTML = svgParts.join("");
+  }
+
+  function drawPortfolioChart(res) {
+    const svg = $("portfolioChart");
+    const W = 800, H = 220, L = 62, R = 16, T = 16, B = 30;
+    const plotW = W - L - R, plotH = H - T - B;
+    const rows = res.rows;
+    const maxV = niceCeil(Math.max(1, ...rows.map(r => r.portfolio)) * 1.1);
+    const minV = niceFloorNeg(Math.min(0, ...rows.map(r => r.portfolio)) * 1.1);
+    const n = rows.length;
+    const x = t => L + ((t - 1) / (n - 1 || 1)) * plotW;
+    const y = v => T + plotH * (maxV - v) / (maxV - minV || 1);
+
+    let svgParts = [];
+    [maxV, maxV / 2, 0, minV / 2, minV].forEach(val => {
+      const gy = y(val);
+      svgParts.push(`<line class="${val === 0 ? "zeroline" : "gridline"}" x1="${L}" y1="${gy.toFixed(1)}" x2="${W - R}" y2="${gy.toFixed(1)}"/>`);
+      svgParts.push(`<text class="axis-label" x="${L - 8}" y="${(gy + 3.5).toFixed(1)}" text-anchor="end">${fmtCompact(val)}</text>`);
+    });
+    const xTickStep = n > 20 ? 5 : n > 10 ? 2 : 1;
+    for (let t = 1; t <= n; t += xTickStep) {
+      svgParts.push(`<text class="axis-label" x="${x(t).toFixed(1)}" y="${H - 8}" text-anchor="middle">${t}</text>`);
+    }
+
+    const pts = rows.map(r => [x(r.t), y(r.portfolio)]);
+    const zeroY = y(0);
+    const areaTop = `M${L},${zeroY} L` + pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" L") + ` L${x(n)},${zeroY} Z`;
+    svgParts.push(`<clipPath id="clipAbove"><rect x="${L}" y="${T}" width="${plotW}" height="${(zeroY - T).toFixed(1)}"/></clipPath>`);
+    svgParts.push(`<clipPath id="clipBelow"><rect x="${L}" y="${zeroY.toFixed(1)}" width="${plotW}" height="${(T + plotH - zeroY).toFixed(1)}"/></clipPath>`);
+    svgParts.push(`<path d="${areaTop}" fill="var(--anes-soft)" clip-path="url(#clipAbove)"/>`);
+    svgParts.push(`<path d="${areaTop}" fill="var(--pain-soft)" clip-path="url(#clipBelow)"/>`);
+    svgParts.push(`<path d="${svgLine(pts)}" fill="none" stroke="var(--ink-muted)" stroke-width="1.75"/>`);
+
+    if (res.crossoverYear) {
+      const cx = x(res.crossoverYear), cy = y(0);
+      svgParts.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4" fill="var(--pain-strong)" stroke="var(--surface)" stroke-width="1.5"/>`);
+      svgParts.push(`<text class="axis-label" x="${cx.toFixed(1)}" y="${(cy - 10).toFixed(1)}" text-anchor="middle" fill="var(--pain-strong)" style="fill:var(--pain-strong)">yr ${res.crossoverYear}</text>`);
+    }
+    const last = pts[pts.length - 1];
+    svgParts.push(`<circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.5" fill="var(--ink)"/>`);
+
+    svg.innerHTML = svgParts.join("");
+  }
+
+  function renderTable(res) {
+    const body = $("tableBody");
+    const rows = res.rows.map(r => {
+      const milestone = r.t === res.totalTrainAnes || r.t === res.totalTrainPain || r.t === 10 || r.t === res.crossoverYear;
+      const diffCell = r.diff >= 0
+        ? `<td class="pos">+${fmtMoney(r.diff)}</td>`
+        : `<td class="neg">${fmtMoney(r.diff)}</td>`;
+      const portCell = r.portfolio >= 0
+        ? `<td class="pos">+${fmtMoney(r.portfolio)}</td>`
+        : `<td class="neg">${fmtMoney(r.portfolio)}</td>`;
+      return `<tr class="${milestone ? "milestone" : ""}"><td>${r.t}</td><td>${fmtMoney(r.anesNet)}</td><td>${fmtMoney(r.painNet)}</td>${diffCell}${portCell}</tr>`;
+    });
+    body.innerHTML = rows.join("");
+  }
+
+  function renderReadout(res, p) {
+    $("horizonEcho").textContent = p.horizon;
+    const final = res.final;
+    const av = $("advantageValue"), asub = $("advantageSub");
+    av.textContent = (final >= 0 ? "+" : "-") + fmtMoney(Math.abs(final));
+    av.className = "readout-value " + (final >= 0 ? "anes" : "pain");
+    asub.textContent = final >= 0
+      ? "favors anesthesiology + investing the gap"
+      : "favors pain medicine's higher long-run pay";
+
+    const cv = $("crossoverValue"), csub = $("crossoverSub");
+    if (res.crossoverYear) {
+      cv.textContent = "Year " + res.crossoverYear;
+      cv.style.color = "var(--pain-strong)";
+      csub.textContent = "pain medicine's cumulative wealth overtakes here";
+    } else if (final >= 0) {
+      cv.textContent = "Beyond " + p.horizon + " yrs";
+      cv.style.color = "var(--anes-strong)";
+      csub.textContent = "anesthesiology stays ahead through the full horizon";
+    } else {
+      cv.textContent = "Before year " + (res.totalTrainPain + 1);
+      cv.style.color = "var(--pain-strong)";
+      csub.textContent = "pain medicine leads almost immediately at these settings";
+    }
+  }
+
+  function updateLabels(p) {
+    $("v_residency").textContent = p.residency + " yr" + (p.residency > 1 ? "s" : "");
+    $("v_fellowship").textContent = p.fellowship + " yr" + (p.fellowship > 1 ? "s" : "");
+    $("v_trainingSalary").textContent = fmtCompact(p.trainingSalary);
+    $("v_raiseRate").textContent = (p.raiseRate * 100).toFixed(1).replace(/\.0$/, "") + "%";
+    $("v_investReturn").textContent = (p.investReturn * 100).toFixed(1).replace(/\.0$/, "") + "%";
+    $("v_horizon").textContent = p.horizon + " yrs";
+    $("v_anesStart").textContent = fmtCompact(p.anesStart);
+    $("v_painStart").textContent = fmtCompact(p.painStart);
+    $("v_painYear10").textContent = fmtCompact(p.painYear10);
+    $("v_painOverhead").textContent = Math.round(p.painOverhead * 100) + "%";
+    $("anesStartYearLabel").textContent = p.residency + 1;
+    $("painStartYearLabel").textContent = p.residency + p.fellowship + 1;
+  }
+
+  function recalc() {
+    const p = readParams();
+    updateLabels(p);
+    const res = computeSeries(p);
+    renderReadout(res, p);
+    drawIncomeChart(res);
+    drawPortfolioChart(res);
+    renderTable(res);
+  }
+
+  ids.forEach(id => els[id].addEventListener("input", recalc));
+  nycEl.addEventListener("change", recalc);
+  recalc();
+})();
+</script>
