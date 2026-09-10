@@ -43,9 +43,10 @@ jobs:
 
       - name: Prepare site files
         run: |
-          mkdir -p _site
+          mkdir -p _site/career-calculator
           cp docs/index.html _site/index.html
           cp docs/history.html _site/history.html
+          cp career-calculator/index.html _site/career-calculator/index.html
           touch _site/.nojekyll
 
       - name: Commit snapshot and data back to repo
