@@ -1,12 +1,12 @@
 {
   "wallet": "0xe16be042f9433779909a972669be3a2003956348",
-  "capturedAt": "2026-09-23 16:32:11",
+  "capturedAt": "2026-09-23 16:36:35",
   "source": "Rabby API + Jupiter",
-  "reportedTotal": 527598.6136476324,
+  "reportedTotal": 527578.7500293604,
   "totals": {
-    "sup": 2536349.9758701795,
-    "bor": 2076791.7273418976,
-    "net": 459558.2485282819,
+    "sup": 2536312.2943018605,
+    "bor": 2076773.3577043437,
+    "net": 459538.93659751676,
     "count": 18,
     "lowest_hr": 0.9715,
     "walletTokensTotal": 0
@@ -210,7 +210,7 @@
         {
           "token": "syrupUSDC",
           "amount": 315444.952169,
-          "usd": 373514.2404551878
+          "usd": 373476.8890311423
         }
       ],
       "borrowed": [
@@ -221,10 +221,10 @@
         }
       ],
       "description": "",
-      "supSum": 373514.2404551878,
+      "supSum": 373476.8890311423,
       "borSum": 335893.5210389264,
       "rewSum": 0,
-      "net": 37620.71941626142,
+      "net": 37583.367992215906,
       "poolId": "0x69a5f9ad4f96ebf0a0c792dd42a01cc5c0102fef"
     },
     {
@@ -266,15 +266,15 @@
         {
           "token": "WMON",
           "amount": 4547.441785657862,
-          "usd": 110.05809558484872
+          "usd": 109.72795131120995
         }
       ],
       "borrowed": [],
       "description": "",
-      "supSum": 110.05809558484872,
+      "supSum": 109.72795131120995,
       "borSum": 0,
       "rewSum": 0,
-      "net": 110.05809558484872,
+      "net": 109.72795131120995,
       "poolId": "0x3ef3d8ba38ebe18db133cec108f4d14ce00dd9ae"
     },
     {
@@ -445,7 +445,7 @@
       "chainId": "plasma",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.0475,
+      "healthRate": 1.0476,
       "supplied": [
         {
           "token": "sUSDai",
@@ -457,14 +457,14 @@
         {
           "token": "GHO",
           "amount": 239054.21559527225,
-          "usd": 238899.63194866473
+          "usd": 238875.74198546988
         }
       ],
       "description": "",
       "supSum": 278049.84755744383,
-      "borSum": 238899.63194866473,
+      "borSum": 238875.74198546988,
       "rewSum": 0,
-      "net": 39150.21560877911,
+      "net": 39174.10557197395,
       "poolId": "0x324c5dc1fc42c7a4d43d92df1eba58a54d13bf2d"
     },
     {
@@ -473,7 +473,7 @@
       "chainId": "sol",
       "type": "Lending",
       "rabbyType": "Lending",
-      "healthRate": 1.1377,
+      "healthRate": 1.1376,
       "supplied": [
         {
           "token": "ONyc",
@@ -484,14 +484,14 @@
       "borrowed": [
         {
           "token": "USDC",
-          "amount": 130856.92882454064,
-          "usd": 130837.32645660272
+          "amount": 130857.00943637519,
+          "usd": 130842.84678224388
         }
       ],
       "description": "Loan C546qjMb",
       "supSum": 198470.22410250886,
-      "borSum": 130837.32645660272,
-      "net": 67632.89764590614,
+      "borSum": 130842.84678224388,
+      "net": 67627.37732026498,
       "poolId": "C546qjMb",
       "rewSum": 0.0
     }
